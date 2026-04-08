@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#121212"
+    android:padding="24dp">
+
+    <!-- Top Bar -->
+    <TextView
+        android:id="@+id/tvNowPlaying"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="16dp"
+        android:text="NOW PLAYING"
+        android:textColor="#B3B3B3"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.1" />
+
+    <!-- Album Art Container -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cvAlbumArt"
+        android:layout_width="match_parent"
+        android:layout_height="320dp"
+        android:layout_below="@+id/tvNowPlaying"
+        android:layout_margin="32dp"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="8dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#1E1E1E"
+            android:gravity="center"
+            android:text="🎵"
+            android:textSize="120sp" />
+    </androidx.cardview.widget.CardView>
+
+    <!-- Song Info -->
+    <TextView
+        android:id="@+id/tvSongName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/cvAlbumArt"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="24dp"
+        android:ellipsize="marquee"
+        android:fadingEdge="horizontal"
+        android:gravity="center"
+        android:marqueeRepeatLimit="marquee_forever"
+        android:scrollHorizontally="true"
+        android:singleLine="true"
+        android:text="Song Name"
+        android:textColor="#FFFFFF"
+        android:textSize="24sp"
+        android:textStyle="bold" />
+
+    <!-- Progress Bar -->
+    <SeekBar
+        android:id="@+id/seekBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/tvSongName"
+        android:layout_marginBottom="8dp"
+        android:progressTint="#1DB954"
+        android:thumbTint="#1DB954" />
+
+    <TextView
+        android:id="@+id/tvCurrentTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/seekBar"
+        android:layout_alignStart="@+id/seekBar"
+        android:text="0:00"
+        android:textColor="#B3B3B3"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/tvTotalTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/seekBar"
+        android:layout_alignEnd="@+id/seekBar"
+        android:text="0:00"
+        android:textColor="#B3B3B3"
+        android:textSize="12sp" />
+
+    <!-- Controls -->
+    <LinearLayout
+        android:id="@+id/llControls"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="48dp"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <ImageButton
+            android:id="@+id/btnPrev"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_marginEnd="24dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_media_previous"
+            app:tint="#FFFFFF" />
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            app:cardBackgroundColor="#1DB954"
+            app:cardCornerRadius="36dp"
+            app:cardElevation="4dp">
+
+            <ImageButton
+                android:id="@+id/btnPlay"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="?android:attr/selectableItemBackground"
+                android:padding="16dp"
+                android:scaleType="fitCenter"
+                android:src="@android:drawable/ic_media_pause"
+                app:tint="#000000" />
+        </androidx.cardview.widget.CardView>
+
+        <ImageButton
+            android:id="@+id/btnNext"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_marginStart="24dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_media_next"
+            app:tint="#FFFFFF" />
+
+    </LinearLayout>
+
+</RelativeLayout>
