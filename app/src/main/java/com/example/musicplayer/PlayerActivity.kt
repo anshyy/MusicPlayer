@@ -24,7 +24,12 @@ class PlayerActivity : AppCompatActivity() {
     private lateinit var btnPlay: ImageButton
     private lateinit var btnNext: ImageButton
     private lateinit var btnPrev: ImageButton
+    private lateinit var btnShuffle: ImageButton
+    private lateinit var btnRepeat: ImageButton
     private lateinit var seekBar: SeekBar
+
+    private var isShuffle = false
+    private var isRepeat = false
 
     private val handler = Handler(Looper.getMainLooper())
     private val updateSeekBar = object : Runnable {
@@ -52,9 +57,30 @@ class PlayerActivity : AppCompatActivity() {
         btnPlay    = findViewById(R.id.btnPlay)
         btnNext    = findViewById(R.id.btnNext)
         btnPrev    = findViewById(R.id.btnPrev)
+        btnShuffle = findViewById(R.id.btnShuffle)
+        btnRepeat  = findViewById(R.id.btnRepeat)
         seekBar    = findViewById(R.id.seekBar)
 
         playSong(currentPosition)
+
+        btnShuffle.setOnClickListener {
+            isShuffle = !isShuffle
+            if (isShuffle) {
+                btnShuffle.setColorFilter(android.graphics.Color.parseColor("#1DB954"))
+            } else {
+                btnShuffle.setColorFilter(android.graphics.Color.parseColor("#B3B3B3"))
+            }
+        }
+
+        btnRepeat.setOnClickListener {
+            isRepeat = !isRepeat
+            mediaPlayer?.isLooping = isRepeat
+            if (isRepeat) {
+                btnRepeat.setColorFilter(android.graphics.Color.parseColor("#1DB954"))
+            } else {
+                btnRepeat.setColorFilter(android.graphics.Color.parseColor("#B3B3B3"))
+            }
+        }
 
         btnPlay.setOnClickListener {
             if (mediaPlayer?.isPlaying == true) {
@@ -68,7 +94,11 @@ class PlayerActivity : AppCompatActivity() {
 
         btnNext.setOnClickListener {
             if (songPaths.isNotEmpty()) {
-                currentPosition = (currentPosition + 1) % songPaths.size
+                if (isShuffle) {
+                    currentPosition = (0 until songPaths.size).random()
+                } else {
+                    currentPosition = (currentPosition + 1) % songPaths.size
+                }
                 playSong(currentPosition)
             }
         }
@@ -103,6 +133,7 @@ class PlayerActivity : AppCompatActivity() {
         mediaPlayer = MediaPlayer().apply {
             setDataSource(songPaths[position])
             prepare()
+            isLooping = isRepeat
             start()
             seekBar.max = duration
             tvTotalTime.text = formatTime(duration)
@@ -111,8 +142,15 @@ class PlayerActivity : AppCompatActivity() {
 
         // Auto play next when song finishes
         mediaPlayer?.setOnCompletionListener {
-            currentPosition = (currentPosition + 1) % songPaths.size
-            playSong(currentPosition)
+            if (isRepeat) {
+                playSong(currentPosition)
+            } else if (isShuffle) {
+                currentPosition = (0 until songPaths.size).random()
+                playSong(currentPosition)
+            } else {
+                currentPosition = (currentPosition + 1) % songPaths.size
+                playSong(currentPosition)
+            }
         }
 
         handler.post(updateSeekBar)
