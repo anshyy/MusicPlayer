@@ -6,19 +6,28 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.view.View
+import android.widget.EditText
+import android.widget.ImageButton
+import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var recyclerView: RecyclerView
-    private lateinit var homeView: android.view.View
-    private lateinit var libraryView: android.view.View
-    private lateinit var bottomNav: com.google.android.material.bottomnavigation.BottomNavigationView
+    private lateinit var homeView: View
+    private lateinit var libraryView: View
+    private lateinit var bottomNav: BottomNavigationView
+    private lateinit var miniPlayer: View
+    private lateinit var tvMiniSongName: TextView
+    private lateinit var btnMiniPlay: ImageButton
     
     private val songList = ArrayList<String>()     // song names
     private val songPaths = ArrayList<String>()    // file paths
@@ -28,7 +37,7 @@ class MainActivity : AppCompatActivity() {
     private val playlists = ArrayList<Playlist>()
     private val permissionCode = 1
 
-    private val createPlaylistLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { result ->
+    private val createPlaylistLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == RESULT_OK) {
             val name = result.data?.getStringExtra("playlist_name") ?: "New Playlist"
             val imageUri = result.data?.getParcelableExtra<android.net.Uri>("playlist_image")
@@ -47,17 +56,38 @@ class MainActivity : AppCompatActivity() {
         homeView = findViewById(R.id.homeView)
         libraryView = findViewById(R.id.libraryView)
         bottomNav = findViewById(R.id.bottomNavigation)
+        miniPlayer = findViewById(R.id.miniPlayer)
+        tvMiniSongName = findViewById(R.id.tvMiniSongName)
+        btnMiniPlay = findViewById(R.id.btnMiniPlay)
+
+        miniPlayer.setOnClickListener {
+            val intent = Intent(this, PlayerActivity::class.java)
+            startActivity(intent)
+        }
+
+        btnMiniPlay.setOnClickListener {
+            MusicPlayerManager.togglePlayPause()
+        }
+
+        MusicPlayerManager.onPlaybackStatusChanged = { isPlaying ->
+            btnMiniPlay.setImageResource(if (isPlaying) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play)
+        }
+
+        MusicPlayerManager.onSongChanged = { _ ->
+            tvMiniSongName.text = MusicPlayerManager.getCurrentSongName()
+            miniPlayer.visibility = View.VISIBLE
+        }
 
         bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_home -> {
-                    homeView.visibility = android.view.View.VISIBLE
-                    libraryView.visibility = android.view.View.GONE
+                    homeView.visibility = View.VISIBLE
+                    libraryView.visibility = View.GONE
                     true
                 }
                 R.id.nav_library -> {
-                    homeView.visibility = android.view.View.GONE
-                    libraryView.visibility = android.view.View.VISIBLE
+                    homeView.visibility = View.GONE
+                    libraryView.visibility = View.VISIBLE
                     setupLibraryView()
                     true
                 }
@@ -65,12 +95,11 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        findViewById<android.widget.ImageButton>(R.id.btnAddPlaylist).setOnClickListener {
+        findViewById<ImageButton>(R.id.btnAddPlaylist).setOnClickListener {
             val intent = Intent(this, PlaylistEditActivity::class.java)
             createPlaylistLauncher.launch(intent)
         }
 
-        // Check and request permission
         if (hasPermission()) {
             loadSongs()
         } else {
@@ -107,7 +136,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadSongs() {
-        // Query device for all audio files
         val uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
         val projection = arrayOf(
             MediaStore.Audio.Media.TITLE,
@@ -133,21 +161,20 @@ class MainActivity : AppCompatActivity() {
         filteredSongPaths.addAll(songPaths)
 
         val adapter = SongAdapter(filteredSongList, { position ->
+            MusicPlayerManager.currentSongList = filteredSongList
+            MusicPlayerManager.currentSongPaths = filteredSongPaths
+            MusicPlayerManager.playSong(this, position)
+            
             val intent = Intent(this, PlayerActivity::class.java)
-            intent.putExtra("songPaths", filteredSongPaths)
-            intent.putExtra("songNames", filteredSongList)
-            intent.putExtra("position", position)
             startActivity(intent)
         }, { position, isLiked ->
             val path = filteredSongPaths[position]
             if (isLiked) likedSongPaths.add(path) else likedSongPaths.remove(path)
             setupLibraryView()
-            val status = if (isLiked) "Liked" else "Unliked"
-            Toast.makeText(this, "$status: ${filteredSongList[position]}", Toast.LENGTH_SHORT).show()
         })
         recyclerView.adapter = adapter
 
-        findViewById<android.widget.EditText>(R.id.etSearch).addTextChangedListener(object : android.text.TextWatcher {
+        findViewById<EditText>(R.id.etSearch).addTextChangedListener(object : android.text.TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 filterSongs(s.toString(), adapter)
@@ -165,14 +192,13 @@ class MainActivity : AppCompatActivity() {
                 filteredSongPaths.add(songPaths[i])
             }
         }
-        adapter.notifyDataSetChanged()
+        adapter.notifyItemRangeChanged(0, adapter.itemCount)
     }
 
     private fun setupLibraryView() {
         val rvLiked = findViewById<RecyclerView>(R.id.rvLikedSongs)
         rvLiked.layoutManager = LinearLayoutManager(this)
         
-        // Filter songs that are liked
         val likedSongs = ArrayList<String>()
         val likedPaths = ArrayList<String>()
         for (i in songPaths.indices) {
@@ -183,11 +209,10 @@ class MainActivity : AppCompatActivity() {
         }
         
         val likedAdapter = SongAdapter(likedSongs, { position ->
-            val intent = Intent(this, PlayerActivity::class.java)
-            intent.putExtra("songPaths", likedPaths)
-            intent.putExtra("songNames", likedSongs)
-            intent.putExtra("position", position)
-            startActivity(intent)
+            MusicPlayerManager.currentSongList = likedSongs
+            MusicPlayerManager.currentSongPaths = likedPaths
+            MusicPlayerManager.playSong(this, position)
+            startActivity(Intent(this, PlayerActivity::class.java))
         }, { position, isLiked ->
             if (!isLiked) {
                 likedSongPaths.remove(likedPaths[position])
@@ -198,9 +223,14 @@ class MainActivity : AppCompatActivity() {
 
         val rvPlaylists = findViewById<RecyclerView>(R.id.rvPlaylists)
         rvPlaylists.layoutManager = LinearLayoutManager(this)
-        val playlistAdapter = PlaylistAdapter(playlists) { playlist ->
-            Toast.makeText(this, "Opening ${playlist.name}", Toast.LENGTH_SHORT).show()
-        }
+        val playlistAdapter = PlaylistAdapter(playlists, { playlist ->
+            MusicPlayerManager.currentSongList = playlist.songPaths
+            MusicPlayerManager.currentSongPaths = playlist.songPaths
+            if (playlist.songPaths.isNotEmpty()) {
+                MusicPlayerManager.playSong(this, 0)
+                startActivity(Intent(this, PlayerActivity::class.java))
+            }
+        })
         rvPlaylists.adapter = playlistAdapter
     }
 }

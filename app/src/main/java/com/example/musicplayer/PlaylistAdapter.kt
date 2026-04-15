@@ -29,7 +29,6 @@ class PlaylistAdapter(
         if (playlist.imageUri != null) {
             holder.ivPlaylist.setImageURI(playlist.imageUri)
         } else {
-            // Default icon if no image selected
             holder.ivPlaylist.setImageResource(android.R.drawable.ic_menu_gallery)
         }
         holder.itemView.setOnClickListener { onClick(playlist) }

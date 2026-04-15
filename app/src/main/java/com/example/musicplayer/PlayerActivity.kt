@@ -1,6 +1,5 @@
 package com.example.musicplayer
 
-import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -8,35 +7,30 @@ import android.widget.ImageButton
 import android.widget.SeekBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-
 import java.util.Locale
 
 class PlayerActivity : AppCompatActivity() {
 
-    private var mediaPlayer: MediaPlayer? = null
-    private var currentPosition = 0
-    private lateinit var songPaths: ArrayList<String>
-    private lateinit var songNames: ArrayList<String>
-
     private lateinit var tvSongName: TextView
     private lateinit var tvCurrentTime: TextView
     private lateinit var tvTotalTime: TextView
+    private lateinit var tvSongPosition: TextView
     private lateinit var btnPlay: ImageButton
     private lateinit var btnNext: ImageButton
     private lateinit var btnPrev: ImageButton
     private lateinit var btnShuffle: ImageButton
     private lateinit var btnRepeat: ImageButton
+    private lateinit var btnLike: ImageButton
     private lateinit var seekBar: SeekBar
-
-    private var isShuffle = false
-    private var isRepeat = false
 
     private val handler = Handler(Looper.getMainLooper())
     private val updateSeekBar = object : Runnable {
         override fun run() {
-            mediaPlayer?.let {
-                seekBar.progress = it.currentPosition
-                tvCurrentTime.text = formatTime(it.currentPosition)
+            MusicPlayerManager.getMediaPlayer()?.let {
+                if (it.isPlaying) {
+                    seekBar.progress = it.currentPosition
+                    tvCurrentTime.text = formatTime(it.currentPosition)
+                }
             }
             handler.postDelayed(this, 1000)
         }
@@ -46,114 +40,96 @@ class PlayerActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_player)
 
-        // Get data passed from MainActivity
-        songPaths = intent.getStringArrayListExtra("songPaths") ?: arrayListOf()
-        songNames = intent.getStringArrayListExtra("songNames") ?: arrayListOf()
-        currentPosition = intent.getIntExtra("position", 0)
-
         tvSongName = findViewById(R.id.tvSongName)
         tvCurrentTime = findViewById(R.id.tvCurrentTime)
         tvTotalTime = findViewById(R.id.tvTotalTime)
+        tvSongPosition = findViewById(R.id.tvSongPosition)
         btnPlay    = findViewById(R.id.btnPlay)
         btnNext    = findViewById(R.id.btnNext)
         btnPrev    = findViewById(R.id.btnPrev)
         btnShuffle = findViewById(R.id.btnShuffle)
         btnRepeat  = findViewById(R.id.btnRepeat)
+        btnLike    = findViewById(R.id.btnLike)
         seekBar    = findViewById(R.id.seekBar)
 
-        playSong(currentPosition)
-
-        btnShuffle.setOnClickListener {
-            isShuffle = !isShuffle
-            if (isShuffle) {
-                btnShuffle.setColorFilter(android.graphics.Color.parseColor("#1DB954"))
-            } else {
-                btnShuffle.setColorFilter(android.graphics.Color.parseColor("#B3B3B3"))
-            }
-        }
-
-        btnRepeat.setOnClickListener {
-            isRepeat = !isRepeat
-            mediaPlayer?.isLooping = isRepeat
-            if (isRepeat) {
-                btnRepeat.setColorFilter(android.graphics.Color.parseColor("#1DB954"))
-            } else {
-                btnRepeat.setColorFilter(android.graphics.Color.parseColor("#B3B3B3"))
-            }
-        }
+        updateUI()
 
         btnPlay.setOnClickListener {
-            if (mediaPlayer?.isPlaying == true) {
-                mediaPlayer?.pause()
-                btnPlay.setImageResource(android.R.drawable.ic_media_play)
-            } else {
-                mediaPlayer?.start()
-                btnPlay.setImageResource(android.R.drawable.ic_media_pause)
-            }
+            MusicPlayerManager.togglePlayPause()
         }
 
         btnNext.setOnClickListener {
-            if (songPaths.isNotEmpty()) {
-                if (isShuffle) {
-                    currentPosition = (0 until songPaths.size).random()
-                } else {
-                    currentPosition = (currentPosition + 1) % songPaths.size
-                }
-                playSong(currentPosition)
-            }
+            MusicPlayerManager.playNext(this)
         }
 
         btnPrev.setOnClickListener {
-            if (songPaths.isNotEmpty()) {
-                currentPosition = if (currentPosition - 1 < 0) songPaths.size - 1
-                else currentPosition - 1
-                playSong(currentPosition)
+            MusicPlayerManager.playPrevious(this)
+        }
+
+        btnShuffle.setOnClickListener {
+            MusicPlayerManager.isShuffle = !MusicPlayerManager.isShuffle
+            updateToggleColors()
+        }
+
+        btnRepeat.setOnClickListener {
+            MusicPlayerManager.isRepeat = !MusicPlayerManager.isRepeat
+            MusicPlayerManager.getMediaPlayer()?.isLooping = MusicPlayerManager.isRepeat
+            updateToggleColors()
+        }
+
+        btnLike.setOnClickListener {
+            // Toggle like
+            val currentColor = btnLike.colorFilter
+            val newColor = if (currentColor == null) {
+                android.graphics.Color.parseColor("#FF69B4")
+            } else {
+                android.graphics.Color.parseColor("#B3B3B3")
             }
+            btnLike.setColorFilter(newColor)
+        }
+
+        MusicPlayerManager.onSongChanged = {
+            updateUI()
+        }
+
+        MusicPlayerManager.onPlaybackStatusChanged = { isPlaying ->
+            btnPlay.setImageResource(if (isPlaying) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play)
         }
 
         seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 if (fromUser) {
-                    mediaPlayer?.seekTo(progress)
+                    MusicPlayerManager.getMediaPlayer()?.seekTo(progress)
                     tvCurrentTime.text = formatTime(progress)
                 }
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
-    }
-
-    private fun playSong(position: Int) {
-        if (songPaths.isEmpty()) return
-
-        mediaPlayer?.stop()
-        mediaPlayer?.release()
-
-        tvSongName.text = songNames[position]
-        mediaPlayer = MediaPlayer().apply {
-            setDataSource(songPaths[position])
-            prepare()
-            isLooping = isRepeat
-            start()
-            seekBar.max = duration
-            tvTotalTime.text = formatTime(duration)
-        }
-        btnPlay.setImageResource(android.R.drawable.ic_media_pause)
-
-        // Auto play next when song finishes
-        mediaPlayer?.setOnCompletionListener {
-            if (isRepeat) {
-                playSong(currentPosition)
-            } else if (isShuffle) {
-                currentPosition = (0 until songPaths.size).random()
-                playSong(currentPosition)
-            } else {
-                currentPosition = (currentPosition + 1) % songPaths.size
-                playSong(currentPosition)
-            }
-        }
 
         handler.post(updateSeekBar)
+    }
+
+    private fun updateUI() {
+        tvSongName.text = MusicPlayerManager.getCurrentSongName()
+        val total = MusicPlayerManager.currentSongList.size
+        val current = MusicPlayerManager.currentPosition + 1
+        tvSongPosition.text = String.format(Locale.getDefault(), "%d / %d", current, total)
+
+        MusicPlayerManager.getMediaPlayer()?.let {
+            seekBar.max = it.duration
+            tvTotalTime.text = formatTime(it.duration)
+            btnPlay.setImageResource(if (it.isPlaying) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play)
+        }
+        updateToggleColors()
+    }
+
+    private fun updateToggleColors() {
+        val activeColor = android.graphics.Color.parseColor("#1DB954")
+        val inactiveColor = android.graphics.Color.parseColor("#B3B3B3")
+
+        btnShuffle.setColorFilter(if (MusicPlayerManager.isShuffle) activeColor else inactiveColor)
+        btnRepeat.setColorFilter(if (MusicPlayerManager.isRepeat) activeColor else inactiveColor)
     }
 
     private fun formatTime(milliseconds: Int): String {
@@ -165,9 +141,5 @@ class PlayerActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         handler.removeCallbacks(updateSeekBar)
-        mediaPlayer?.stop()
-        mediaPlayer?.release()
-        mediaPlayer = null
     }
 }
-
