@@ -15,6 +15,7 @@ class PlaylistAdapter(
     class PlaylistViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val ivPlaylist: ImageView = view.findViewById(R.id.ivPlaylistThumb)
         val tvName: TextView = view.findViewById(R.id.tvPlaylistName)
+        val tvSub: TextView = view.findViewById(R.id.tvPlaylistSub)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PlaylistViewHolder {
@@ -26,6 +27,8 @@ class PlaylistAdapter(
     override fun onBindViewHolder(holder: PlaylistViewHolder, position: Int) {
         val playlist = playlists[position]
         holder.tvName.text = playlist.name
+        val songCount = playlist.songPaths.size
+        holder.tvSub.text = "$songCount ${if (songCount == 1) "song" else "songs"}"
         if (playlist.imageUri != null) {
             holder.ivPlaylist.setImageURI(playlist.imageUri)
         } else {

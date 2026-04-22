@@ -8,4 +8,8 @@
         android:id="@+id/nav_library"
         android:icon="@android:drawable/ic_menu_agenda"
         android:title="Library" />
+    <item
+        android:id="@+id/nav_search"
+        android:icon="@android:drawable/ic_menu_search"
+        android:title="Search" />
 </menu>

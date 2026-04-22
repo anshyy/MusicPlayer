@@ -33,9 +33,9 @@ class SongAdapter(
         holder.btnLike.setImageResource(R.drawable.ic_heart)
         
         if (likedSongs[position]) {
-            holder.btnLike.setColorFilter(android.graphics.Color.parseColor("#1DB954"))
+            holder.btnLike.setColorFilter(android.graphics.Color.parseColor("#FF69B4")) // Pink for liked
         } else {
-            holder.btnLike.setColorFilter(android.graphics.Color.parseColor("#B3B3B3"))
+            holder.btnLike.setColorFilter(android.graphics.Color.parseColor("#94A3B8")) // text_tertiary
         }
 
         holder.itemView.setOnClickListener { onClick(position) }

@@ -78,12 +78,12 @@ class PlayerActivity : AppCompatActivity() {
         }
 
         btnLike.setOnClickListener {
-            // Toggle like
+            // Toggle like - for now just visual feedback
             val currentColor = btnLike.colorFilter
             val newColor = if (currentColor == null) {
-                android.graphics.Color.parseColor("#FF69B4")
+                android.graphics.Color.parseColor("#FF69B4") // Pink for liked
             } else {
-                android.graphics.Color.parseColor("#B3B3B3")
+                android.graphics.Color.parseColor("#94A3B8") // Default tertiary color
             }
             btnLike.setColorFilter(newColor)
         }
@@ -125,8 +125,8 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun updateToggleColors() {
-        val activeColor = android.graphics.Color.parseColor("#1DB954")
-        val inactiveColor = android.graphics.Color.parseColor("#B3B3B3")
+        val activeColor = android.graphics.Color.parseColor("#A855F7") // accent_highlight
+        val inactiveColor = android.graphics.Color.parseColor("#94A3B8") // text_tertiary
 
         btnShuffle.setColorFilter(if (MusicPlayerManager.isShuffle) activeColor else inactiveColor)
         btnRepeat.setColorFilter(if (MusicPlayerManager.isRepeat) activeColor else inactiveColor)
