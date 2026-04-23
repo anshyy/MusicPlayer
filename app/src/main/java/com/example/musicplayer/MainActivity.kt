@@ -20,8 +20,14 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
+import androidx.core.view.GravityCompat
+import androidx.drawerlayout.widget.DrawerLayout
+import com.google.android.material.navigation.NavigationView
+
 class MainActivity : AppCompatActivity() {
 
+    private lateinit var drawerLayout: DrawerLayout
+    private lateinit var navView: NavigationView
     private lateinit var recyclerView: RecyclerView
     private lateinit var homeView: View
     private lateinit var libraryView: View
@@ -36,12 +42,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var etSearchTabInput: EditText
     private lateinit var tvTitle: TextView
 
-    private val songList = ArrayList<String>()     // song names
-    private val songPaths = ArrayList<String>()    // file paths
-    private val filteredSongList = ArrayList<String>()
-    private val filteredSongPaths = ArrayList<String>()
-    private val searchResultsList = ArrayList<String>()
-    private val searchResultsPaths = ArrayList<String>()
+    private val songList = ArrayList<Song>()
+    private val searchResultsList = ArrayList<Song>()
     private val likedSongPaths = HashSet<String>()
     private val recentlyPlayedSongs = ArrayList<RecentlyPlayed>()
     private val dailyMixes = ArrayList<DailyMix>()
@@ -62,11 +64,13 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        drawerLayout = findViewById(R.id.drawerLayout)
+        navView = findViewById(R.id.navView)
         recyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
         
         rvDailyMixes = findViewById(R.id.rvDailyMixes)
-        rvDailyMixes.layoutManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
+        rvDailyMixes.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
 
         rvRecentlyPlayed = findViewById(R.id.rvRecentlyPlayed)
         rvRecentlyPlayed.layoutManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
@@ -83,6 +87,27 @@ class MainActivity : AppCompatActivity() {
         btnMiniPlay = findViewById(R.id.btnMiniPlay)
         tvTitle = findViewById(R.id.tvTitle)
         etSearchTabInput = findViewById(R.id.etSearchTabInput)
+
+        findViewById<ImageButton>(R.id.btnMenu).setOnClickListener {
+            drawerLayout.openDrawer(GravityCompat.START)
+        }
+
+        findViewById<ImageButton>(R.id.btnSearch).setOnClickListener {
+            switchToSearchTab()
+        }
+
+        navView.setNavigationItemSelectedListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.nav_home -> switchToHomeTab()
+                R.id.nav_friends -> Toast.makeText(this, "Friends clicked", Toast.LENGTH_SHORT).show()
+                R.id.nav_settings -> Toast.makeText(this, "Settings clicked", Toast.LENGTH_SHORT).show()
+            }
+            drawerLayout.closeDrawer(GravityCompat.START)
+            true
+        }
+
+        // Setup category clicks
+        setupCategoryClicks()
 
         miniPlayer.setOnClickListener {
             val intent = Intent(this, PlayerActivity::class.java)
@@ -105,25 +130,15 @@ class MainActivity : AppCompatActivity() {
         bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_home -> {
-                    homeView.visibility = View.VISIBLE
-                    libraryView.visibility = View.GONE
-                    searchView.visibility = View.GONE
-                    tvTitle.text = "Home"
+                    switchToHomeTab()
                     true
                 }
                 R.id.nav_library -> {
-                    homeView.visibility = View.GONE
-                    libraryView.visibility = View.VISIBLE
-                    searchView.visibility = View.GONE
-                    tvTitle.text = "Library"
-                    setupLibraryView()
+                    switchToLibraryTab()
                     true
                 }
                 R.id.nav_search -> {
-                    homeView.visibility = View.GONE
-                    libraryView.visibility = View.GONE
-                    searchView.visibility = View.VISIBLE
-                    tvTitle.text = "Search"
+                    switchToSearchTab()
                     true
                 }
                 else -> false
@@ -135,12 +150,6 @@ class MainActivity : AppCompatActivity() {
             createPlaylistLauncher.launch(intent)
         }
 
-        // Add login button to the header
-        findViewById<ImageButton>(R.id.btnLogin).setOnClickListener {
-            val intent = Intent(this, LoginActivity::class.java)
-            startActivity(intent)
-        }
-
         // Setup search tab listener
         setupSearchListener()
 
@@ -149,6 +158,65 @@ class MainActivity : AppCompatActivity() {
         } else {
             requestPermission()
         }
+    }
+
+    private fun setupCategoryClicks() {
+        findViewById<View>(R.id.catHipHop).setOnClickListener {
+            openCategoryPlaylist("Hip Hop")
+        }
+        findViewById<View>(R.id.catPop).setOnClickListener {
+            openCategoryPlaylist("Pop Music")
+        }
+        findViewById<View>(R.id.catBlues).setOnClickListener {
+            openCategoryPlaylist("Blues")
+        }
+    }
+
+    private fun openCategoryPlaylist(category: String) {
+        val filteredSongs = ArrayList<String>()
+        val filteredPaths = ArrayList<String>()
+        
+        // Simulating category filtering - in a real app you'd have genre metadata
+        // For now, we'll just pick some random songs if the list is large enough
+        if (songList.isNotEmpty()) {
+            for (i in 0 until minOf(10, songList.size)) {
+                filteredSongs.add(songList[i].title)
+                filteredPaths.add(songList[i].path)
+            }
+        }
+
+        val intent = Intent(this, ListDetailActivity::class.java).apply {
+            putExtra("list_title", category)
+            putStringArrayListExtra("song_names", filteredSongs)
+            putStringArrayListExtra("song_paths", filteredPaths)
+        }
+        startActivity(intent)
+    }
+
+    private fun switchToHomeTab() {
+        homeView.visibility = View.VISIBLE
+        libraryView.visibility = View.GONE
+        searchView.visibility = View.GONE
+        tvTitle.text = "Home"
+        bottomNav.selectedItemId = R.id.nav_home
+    }
+
+    private fun switchToLibraryTab() {
+        homeView.visibility = View.GONE
+        libraryView.visibility = View.VISIBLE
+        searchView.visibility = View.GONE
+        tvTitle.text = "Library"
+        bottomNav.selectedItemId = R.id.nav_library
+        setupLibraryView()
+    }
+
+    private fun switchToSearchTab() {
+        homeView.visibility = View.GONE
+        libraryView.visibility = View.GONE
+        searchView.visibility = View.VISIBLE
+        tvTitle.text = "Search"
+        bottomNav.selectedItemId = R.id.nav_search
+        etSearchTabInput.requestFocus()
     }
 
     private fun setupSearchListener() {
@@ -163,29 +231,31 @@ class MainActivity : AppCompatActivity() {
 
     private fun searchSongs(query: String) {
         searchResultsList.clear()
-        searchResultsPaths.clear()
         
         if (query.isEmpty()) {
             rvSearchResults.adapter = null
             return
         }
         
-        for (i in songList.indices) {
-            if (songList[i].lowercase().contains(query.lowercase())) {
-                searchResultsList.add(songList[i])
-                searchResultsPaths.add(songPaths[i])
+        for (song in songList) {
+            if (song.title.lowercase().contains(query.lowercase()) || 
+                song.artist.lowercase().contains(query.lowercase())) {
+                searchResultsList.add(song)
             }
         }
         
-        val adapter = SongAdapter(searchResultsList, searchResultsPaths, likedSongPaths, { position ->
-            MusicPlayerManager.currentSongList = searchResultsList
-            MusicPlayerManager.currentSongPaths = searchResultsPaths
+        val adapter = SongAdapter(searchResultsList, likedSongPaths, { position ->
+            val song = searchResultsList[position]
+            MusicPlayerManager.currentSongList = searchResultsList.map { it.title }
+            MusicPlayerManager.currentSongPaths = searchResultsList.map { it.path }
+            MusicPlayerManager.currentSongArtUris = searchResultsList.map { it.albumArtUri }
+            MusicPlayerManager.currentArtists = searchResultsList.map { it.artist }
             MusicPlayerManager.playSong(this, position)
-            addToRecentlyPlayed(searchResultsList[position], searchResultsPaths[position])
+            addToRecentlyPlayed(song)
             val intent = Intent(this, PlayerActivity::class.java)
             startActivity(intent)
         }, { position, isLiked ->
-            val path = searchResultsPaths[position]
+            val path = searchResultsList[position].path
             if (isLiked) likedSongPaths.add(path) else likedSongPaths.remove(path)
         })
         rvSearchResults.adapter = adapter
@@ -223,16 +293,25 @@ class MainActivity : AppCompatActivity() {
         val uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
         val projection = arrayOf(
             MediaStore.Audio.Media.TITLE,
-            MediaStore.Audio.Media.DATA
+            MediaStore.Audio.Media.ARTIST,
+            MediaStore.Audio.Media.DATA,
+            MediaStore.Audio.Media.ALBUM_ID
         )
         val cursor = contentResolver.query(uri, projection, null, null, null)
 
         cursor?.use {
             while (it.moveToNext()) {
                 val title = it.getString(it.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE))
+                val artist = it.getString(it.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST))
                 val path  = it.getString(it.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA))
-                songList.add(title)
-                songPaths.add(path)
+                val albumId = it.getLong(it.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID))
+                
+                val artworkUri = android.content.ContentUris.withAppendedId(
+                    android.net.Uri.parse("content://media/external/audio/albumart"),
+                    albumId
+                )
+                
+                songList.add(Song(title, artist, path, albumId, artworkUri))
             }
         }
 
@@ -241,19 +320,18 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        filteredSongList.addAll(songList)
-        filteredSongPaths.addAll(songPaths)
-
-        val adapter = SongAdapter(filteredSongList, filteredSongPaths, likedSongPaths, { position ->
-            MusicPlayerManager.currentSongList = filteredSongList
-            MusicPlayerManager.currentSongPaths = filteredSongPaths
+        val adapter = SongAdapter(songList, likedSongPaths, { position ->
+            MusicPlayerManager.currentSongList = songList.map { it.title }
+            MusicPlayerManager.currentSongPaths = songList.map { it.path }
+            MusicPlayerManager.currentSongArtUris = songList.map { it.albumArtUri }
+            MusicPlayerManager.currentArtists = songList.map { it.artist }
             MusicPlayerManager.playSong(this, position)
-            addToRecentlyPlayed(filteredSongList[position], filteredSongPaths[position])
+            addToRecentlyPlayed(songList[position])
 
             val intent = Intent(this, PlayerActivity::class.java)
             startActivity(intent)
         }, { position, isLiked ->
-            val path = filteredSongPaths[position]
+            val path = songList[position].path
             if (isLiked) likedSongPaths.add(path) else likedSongPaths.remove(path)
             setupLibraryView()
         })
@@ -267,24 +345,20 @@ class MainActivity : AppCompatActivity() {
         val rvLiked = findViewById<RecyclerView>(R.id.rvLikedSongs)
         rvLiked.layoutManager = LinearLayoutManager(this)
         
-        val likedSongs = ArrayList<String>()
-        val likedPaths = ArrayList<String>()
-        for (i in songPaths.indices) {
-            if (likedSongPaths.contains(songPaths[i])) {
-                likedSongs.add(songList[i])
-                likedPaths.add(songPaths[i])
-            }
-        }
+        val likedSongs = songList.filter { likedSongPaths.contains(it.path) }
         
-        val likedAdapter = SongAdapter(likedSongs, likedPaths, likedSongPaths, { position ->
-            MusicPlayerManager.currentSongList = likedSongs
-            MusicPlayerManager.currentSongPaths = likedPaths
+        val likedAdapter = SongAdapter(likedSongs, likedSongPaths, { position ->
+            val song = likedSongs[position]
+            MusicPlayerManager.currentSongList = likedSongs.map { it.title }
+            MusicPlayerManager.currentSongPaths = likedSongs.map { it.path }
+            MusicPlayerManager.currentSongArtUris = likedSongs.map { it.albumArtUri }
+            MusicPlayerManager.currentArtists = likedSongs.map { it.artist }
             MusicPlayerManager.playSong(this, position)
-            addToRecentlyPlayed(likedSongs[position], likedPaths[position])
+            addToRecentlyPlayed(song)
             startActivity(Intent(this, PlayerActivity::class.java))
         }, { position, isLiked ->
             if (!isLiked) {
-                likedSongPaths.remove(likedPaths[position])
+                likedSongPaths.remove(likedSongs[position].path)
                 setupLibraryView()
             }
         })
@@ -300,9 +374,9 @@ class MainActivity : AppCompatActivity() {
                 val names = ArrayList<String>()
                 val paths = ArrayList<String>()
                 for (path in playlist.songPaths) {
-                    val idx = songPaths.indexOf(path)
-                    if (idx != -1) {
-                        names.add(songList[idx])
+                    val song = songList.find { it.path == path }
+                    if (song != null) {
+                        names.add(song.title)
                         paths.add(path)
                     }
                 }
@@ -355,6 +429,7 @@ class MainActivity : AppCompatActivity() {
                 id = "mix_${i}",
                 title = mixTitles[i],
                 description = mixDescriptions[i],
+                imageUri = if (mixPaths.isNotEmpty()) songList.find { it.path == mixPaths[0] }?.albumArtUri else null,
                 color = colors[i % colors.size],
                 songs = mixSongs,
                 songPaths = mixPaths
@@ -374,9 +449,15 @@ class MainActivity : AppCompatActivity() {
         val dailyMixAdapter = DailyMixAdapter(dailyMixes) { mix ->
             MusicPlayerManager.currentSongList = mix.songs
             MusicPlayerManager.currentSongPaths = mix.songPaths
+            MusicPlayerManager.currentSongArtUris = mix.songPaths.map { path ->
+                songList.find { it.path == path }?.albumArtUri
+            }
+            MusicPlayerManager.currentArtists = mix.songPaths.map { path ->
+                songList.find { it.path == path }?.artist ?: "Unknown"
+            }
             if (mix.songPaths.isNotEmpty()) {
                 MusicPlayerManager.playSong(this, 0)
-                addToRecentlyPlayed(mix.songs[0], mix.songPaths[0])
+                addToRecentlyPlayed(songList.find { it.path == mix.songPaths[0] } ?: Song(mix.songs[0], "Unknown", mix.songPaths[0], 0))
                 startActivity(Intent(this, PlayerActivity::class.java))
             }
         }
@@ -385,10 +466,12 @@ class MainActivity : AppCompatActivity() {
         // Setup Recently Played RecyclerView
         val recentlyPlayedAdapter = RecentlyPlayedAdapter(recentlyPlayedSongs) { position ->
             val song = recentlyPlayedSongs[position]
-            val idx = songPaths.indexOf(song.songPath)
+            val idx = songList.indexOfFirst { it.path == song.songPath }
             if (idx != -1) {
-                MusicPlayerManager.currentSongList = songList
-                MusicPlayerManager.currentSongPaths = songPaths
+                MusicPlayerManager.currentSongList = songList.map { it.title }
+                MusicPlayerManager.currentSongPaths = songList.map { it.path }
+                MusicPlayerManager.currentSongArtUris = songList.map { it.albumArtUri }
+                MusicPlayerManager.currentArtists = songList.map { it.artist }
                 MusicPlayerManager.playSong(this, idx)
                 startActivity(Intent(this, PlayerActivity::class.java))
             }
@@ -396,12 +479,12 @@ class MainActivity : AppCompatActivity() {
         rvRecentlyPlayed.adapter = recentlyPlayedAdapter
     }
 
-    private fun addToRecentlyPlayed(songName: String, songPath: String) {
+    private fun addToRecentlyPlayed(song: Song) {
         // Remove if already exists
-        recentlyPlayedSongs.removeAll { it.songPath == songPath }
+        recentlyPlayedSongs.removeAll { it.songPath == song.path }
 
         // Add to beginning
-        recentlyPlayedSongs.add(0, RecentlyPlayed(songName, songPath))
+        recentlyPlayedSongs.add(0, RecentlyPlayed(song.title, song.path, System.currentTimeMillis(), song.albumArtUri))
 
         // Keep only last 20 songs
         while (recentlyPlayedSongs.size > 20) {

@@ -1,41 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Primary Colors - Calm Purple & Mint Theme -->
-    <color name="primary_background">#0F1419</color>
-    <color name="secondary_background">#1A1F28</color>
-    <color name="card_background">#1E2533</color>
-    <color name="accent_primary">#5D4E8C</color>
-    <color name="accent_secondary">#8B5FBF</color>
-    <color name="accent_highlight">#B794D6</color>
+    <!-- Modern Dark Theme - Deep Blue & Neon Accents -->
+    <color name="primary_background">#09090F</color>
+    <color name="secondary_background">#12121F</color>
+    <color name="card_background">#1A1A2E</color>
+    <color name="accent_primary">#2D60FF</color>
+    <color name="accent_secondary">#7000FF</color>
+    <color name="accent_highlight">#00D1FF</color>
 
     <!-- Text Colors -->
-    <color name="text_primary">#F8FAFB</color>
-    <color name="text_secondary">#C8D1DC</color>
-    <color name="text_tertiary">#9BA6B3</color>
-    <color name="text_hint">#697784</color>
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#A0A0AB</color>
+    <color name="text_tertiary">#66667A</color>
+    <color name="text_hint">#444455</color>
 
-    <!-- Interactive Colors - Purple Gradient -->
-    <color name="button_primary">#8B5FBF</color>
-    <color name="button_pressed">#6D47A0</color>
-    <color name="button_disabled">#4A5568</color>
+    <!-- Interactive Colors -->
+    <color name="button_primary">#2D60FF</color>
+    <color name="button_pressed">#1A4AD9</color>
+    <color name="button_disabled">#2A2A3D</color>
 
     <!-- Status Colors -->
-    <color name="success">#4CAF50</color>
-    <color name="warning">#FFC107</color>
-    <color name="error">#F44336</color>
+    <color name="success">#00E676</color>
+    <color name="warning">#FFD600</color>
+    <color name="error">#FF1744</color>
 
     <!-- Seek Bar Colors -->
-    <color name="seek_bar_background">#2E3A48</color>
-    <color name="seek_bar_progress">#B794D6</color>
-    <color name="seek_bar_thumb">#8B5FBF</color>
+    <color name="seek_bar_background">#2A2A3D</color>
+    <color name="seek_bar_progress">#2D60FF</color>
+    <color name="seek_bar_thumb">#FFFFFF</color>
 
-    <!-- Discover Weekly Colors -->
-    <color name="discover_weekly">#6A5B95</color>
-    <color name="new_music_daily">#8B7AB8</color>
-    <color name="feel_good_mix">#9B8FCC</color>
-    <color name="recently_played">#7A6BAA</color>
+    <!-- Categories / Mixes -->
+    <color name="cat_hiphop">#FF2D55</color>
+    <color name="cat_pop">#00D1FF</color>
+    <color name="cat_blues">#7000FF</color>
+    <color name="cat_rock">#FF9F0A</color>
 
     <!-- Legacy Colors (for compatibility) -->
-    <color name="black">#0F1419</color>
-    <color name="white">#F8FAFB</color>
+    <color name="black">#000000</color>
+    <color name="white">#FFFFFF</color>
 </resources>

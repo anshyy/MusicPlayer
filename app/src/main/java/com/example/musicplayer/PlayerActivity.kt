@@ -4,17 +4,20 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.SeekBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.bumptech.glide.Glide
 import java.util.Locale
 
 class PlayerActivity : AppCompatActivity() {
 
     private lateinit var tvSongName: TextView
+    private lateinit var tvArtistName: TextView
+    private lateinit var ivAlbumArt: ImageView
     private lateinit var tvCurrentTime: TextView
     private lateinit var tvTotalTime: TextView
-    private lateinit var tvSongPosition: TextView
     private lateinit var btnPlay: ImageButton
     private lateinit var btnNext: ImageButton
     private lateinit var btnPrev: ImageButton
@@ -41,9 +44,10 @@ class PlayerActivity : AppCompatActivity() {
         setContentView(R.layout.activity_player)
 
         tvSongName = findViewById(R.id.tvSongName)
+        tvArtistName = findViewById(R.id.tvArtistName)
+        ivAlbumArt = findViewById(R.id.ivAlbumArt)
         tvCurrentTime = findViewById(R.id.tvCurrentTime)
         tvTotalTime = findViewById(R.id.tvTotalTime)
-        tvSongPosition = findViewById(R.id.tvSongPosition)
         btnPlay    = findViewById(R.id.btnPlay)
         btnNext    = findViewById(R.id.btnNext)
         btnPrev    = findViewById(R.id.btnPrev)
@@ -112,9 +116,13 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun updateUI() {
         tvSongName.text = MusicPlayerManager.getCurrentSongName()
-        val total = MusicPlayerManager.currentSongList.size
-        val current = MusicPlayerManager.currentPosition + 1
-        tvSongPosition.text = String.format(Locale.getDefault(), "%d / %d", current, total)
+        tvArtistName.text = MusicPlayerManager.getCurrentArtist() ?: "Unknown Artist"
+        
+        Glide.with(this)
+            .load(MusicPlayerManager.getCurrentSongArtUri())
+            .placeholder(R.drawable.gradient_card_pop)
+            .error(R.drawable.gradient_card_pop)
+            .into(ivAlbumArt)
 
         MusicPlayerManager.getMediaPlayer()?.let {
             seekBar.max = it.duration

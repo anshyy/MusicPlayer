@@ -8,6 +8,8 @@ object MusicPlayerManager {
     private var mediaPlayer: MediaPlayer? = null
     var currentSongList: List<String> = emptyList()
     var currentSongPaths: List<String> = emptyList()
+    var currentSongArtUris: List<Uri?> = emptyList()
+    var currentArtists: List<String> = emptyList()
     var currentPosition: Int = -1
     var isShuffle: Boolean = false
     var isRepeat: Boolean = false
@@ -67,6 +69,14 @@ object MusicPlayerManager {
 
     fun getCurrentSongName(): String? {
         return if (currentPosition in currentSongList.indices) currentSongList[currentPosition] else null
+    }
+
+    fun getCurrentArtist(): String? {
+        return if (currentPosition in currentArtists.indices) currentArtists[currentPosition] else null
+    }
+
+    fun getCurrentSongArtUri(): Uri? {
+        return if (currentPosition in currentSongArtUris.indices) currentSongArtUris[currentPosition] else null
     }
 
     fun release() {

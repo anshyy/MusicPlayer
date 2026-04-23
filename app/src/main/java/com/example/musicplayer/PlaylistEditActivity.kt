@@ -21,8 +21,7 @@ class PlaylistEditActivity : AppCompatActivity() {
     private lateinit var rvSongsForPlaylist: RecyclerView
     private var selectedImageUri: Uri? = null
     private val selectedSongPaths = ArrayList<String>()
-    private val allSongs = ArrayList<String>()
-    private val allSongPaths = ArrayList<String>()
+    private val allSongs = ArrayList<Song>()
 
     private val selectImageLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == RESULT_OK) {
@@ -72,21 +71,30 @@ class PlaylistEditActivity : AppCompatActivity() {
         val uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
         val projection = arrayOf(
             MediaStore.Audio.Media.TITLE,
-            MediaStore.Audio.Media.DATA
+            MediaStore.Audio.Media.ARTIST,
+            MediaStore.Audio.Media.DATA,
+            MediaStore.Audio.Media.ALBUM_ID
         )
         val cursor = contentResolver.query(uri, projection, null, null, null)
 
         cursor?.use {
             while (it.moveToNext()) {
                 val title = it.getString(it.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE))
+                val artist = it.getString(it.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST))
                 val path = it.getString(it.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA))
-                allSongs.add(title)
-                allSongPaths.add(path)
+                val albumId = it.getLong(it.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID))
+                
+                val artworkUri = android.content.ContentUris.withAppendedId(
+                    android.net.Uri.parse("content://media/external/audio/albumart"),
+                    albumId
+                )
+                
+                allSongs.add(Song(title, artist, path, albumId, artworkUri))
             }
         }
 
         if (allSongs.isNotEmpty()) {
-            val adapter = PlaylistSongAdapter(allSongs, allSongPaths, selectedSongPaths) { selectedPaths: ArrayList<String> ->
+            val adapter = PlaylistSongAdapter(allSongs, selectedSongPaths) { selectedPaths: ArrayList<String> ->
                 this.selectedSongPaths.clear()
                 this.selectedSongPaths.addAll(selectedPaths)
             }

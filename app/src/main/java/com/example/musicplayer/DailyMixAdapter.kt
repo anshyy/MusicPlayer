@@ -4,11 +4,13 @@ import android.content.Intent
 import android.graphics.Color
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.core.graphics.toColorInt
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import java.util.ArrayList
 
 class DailyMixAdapter(
@@ -16,20 +18,29 @@ class DailyMixAdapter(
     private val onClick: (DailyMix) -> Unit
 ) : RecyclerView.Adapter<DailyMixAdapter.DailyMixViewHolder>() {
 
-    class DailyMixViewHolder(val itemView: CardView, val titleText: TextView, val descText: TextView, val songCountText: TextView) : RecyclerView.ViewHolder(itemView)
+    class DailyMixViewHolder(val itemView: CardView, val titleText: TextView, val descText: TextView, val imageView: ImageView) : RecyclerView.ViewHolder(itemView)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): DailyMixViewHolder {
         val context = parent.context
         val cardView = CardView(context).apply {
             layoutParams = ViewGroup.MarginLayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
+                dpToPx(160),
                 dpToPx(160)
             ).apply {
-                setMargins(dpToPx(16), dpToPx(8), dpToPx(16), dpToPx(8))
+                setMargins(dpToPx(8), 0, dpToPx(8), 0)
             }
-            setCardBackgroundColor("#8B5FBF".toColorInt())
-            radius = dpToPx(28).toFloat()
-            cardElevation = dpToPx(4).toFloat()
+            setCardBackgroundColor(context.getColor(R.color.card_background))
+            radius = dpToPx(24).toFloat()
+            cardElevation = 0f
+
+            val imageView = ImageView(context).apply {
+                layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
+                scaleType = ImageView.ScaleType.CENTER_CROP
+                alpha = 0.6f
+            }
 
             val linearLayout = LinearLayout(context).apply {
                 layoutParams = ViewGroup.LayoutParams(
@@ -37,57 +48,55 @@ class DailyMixAdapter(
                     ViewGroup.LayoutParams.MATCH_PARENT
                 )
                 orientation = LinearLayout.VERTICAL
-                gravity = android.view.Gravity.CENTER_VERTICAL
-                setPadding(dpToPx(24), dpToPx(24), dpToPx(24), dpToPx(24))
+                gravity = android.view.Gravity.BOTTOM
+                setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16))
             }
 
             val titleView = TextView(context).apply {
-                text = "Daily Mix"
                 setTextColor(Color.WHITE)
-                textSize = 24f
+                textSize = 16f
                 setTypeface(null, android.graphics.Typeface.BOLD)
             }
 
             val descView = TextView(context).apply {
-                text = "Your favorite songs"
-                setTextColor("#E0E0E0".toColorInt())
-                textSize = 14f
+                setTextColor("#A0A0AB".toColorInt())
+                textSize = 12f
                 alpha = 0.8f
             }
 
-            val countView = TextView(context).apply {
-                text = "50 Songs"
-                setTextColor(Color.WHITE)
-                textSize = 12f
-                alpha = 0.6f
-                setPadding(0, dpToPx(8), 0, 0)
-            }
-
+            addView(imageView)
             linearLayout.addView(titleView)
             linearLayout.addView(descView)
-            linearLayout.addView(countView)
             addView(linearLayout)
 
-            tag = Triple(titleView, descView, countView)
+            tag = Triple(titleView, descView, imageView)
         }
 
         @Suppress("UNCHECKED_CAST")
-        val tagTriple = cardView.tag as? Triple<TextView, TextView, TextView>
-        val (titleText, descText, countText) = tagTriple ?: Triple(TextView(parent.context), TextView(parent.context), TextView(parent.context))
-        return DailyMixViewHolder(cardView, titleText, descText, countText)
+        val tagTriple = cardView.tag as? Triple<TextView, TextView, ImageView>
+        val (titleText, descText, imageView) = tagTriple ?: Triple(TextView(context), TextView(context), ImageView(context))
+        return DailyMixViewHolder(cardView, titleText, descText, imageView)
     }
 
     override fun onBindViewHolder(holder: DailyMixViewHolder, position: Int) {
         val mix = dailyMixes[position]
         holder.titleText.text = mix.title
         holder.descText.text = mix.description
-        holder.songCountText.text = "${mix.songs.size} Songs"
 
-        try {
-            val color = mix.color.toColorInt()
-            holder.itemView.setCardBackgroundColor(color)
-        } catch (e: Exception) {
-            holder.itemView.setCardBackgroundColor("#8B5FBF".toColorInt())
+        if (mix.imageUri != null) {
+            Glide.with(holder.itemView.context)
+                .load(mix.imageUri)
+                .into(holder.imageView)
+            holder.itemView.setCardBackgroundColor(Color.BLACK)
+        } else {
+            // Use colors from palette for horizontal items if no image
+            val colors = listOf("#2D60FF", "#7000FF", "#00D1FF", "#FF2D55")
+            try {
+                holder.itemView.setCardBackgroundColor(Color.parseColor(colors[position % colors.size]))
+            } catch (e: Exception) {
+                holder.itemView.setCardBackgroundColor(holder.itemView.context.getColor(R.color.accent_primary))
+            }
+            holder.imageView.setImageDrawable(null)
         }
 
         holder.itemView.setOnClickListener { 
@@ -107,8 +116,3 @@ class DailyMixAdapter(
         return (dp * 2.5).toInt()
     }
 }
-
-
-
-
-

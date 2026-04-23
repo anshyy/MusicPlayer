@@ -2,11 +2,13 @@ package com.example.musicplayer
 
 import android.graphics.Color
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.core.graphics.toColorInt
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -15,7 +17,7 @@ class RecentlyPlayedAdapter(
     private val onClick: (Int) -> Unit
 ) : RecyclerView.Adapter<RecentlyPlayedAdapter.RecentlyPlayedViewHolder>() {
 
-    class RecentlyPlayedViewHolder(itemView: CardView, val songName: TextView, val playedTime: TextView) : RecyclerView.ViewHolder(itemView)
+    class RecentlyPlayedViewHolder(itemView: CardView, val songName: TextView, val playedTime: TextView, val albumArt: ImageView) : RecyclerView.ViewHolder(itemView)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecentlyPlayedViewHolder {
         val context = parent.context
@@ -35,6 +37,12 @@ class RecentlyPlayedAdapter(
                 )
                 orientation = LinearLayout.HORIZONTAL
                 setPadding(dpToPx(16), dpToPx(12), dpToPx(16), dpToPx(12))
+                gravity = android.view.Gravity.CENTER_VERTICAL
+            }
+
+            val albumArtView = ImageView(context).apply {
+                layoutParams = ViewGroup.LayoutParams(dpToPx(48), dpToPx(48))
+                scaleType = ImageView.ScaleType.CENTER_CROP
             }
 
             val textLayout = LinearLayout(context).apply {
@@ -44,6 +52,7 @@ class RecentlyPlayedAdapter(
                     1f
                 )
                 orientation = LinearLayout.VERTICAL
+                setPadding(dpToPx(12), 0, 0, 0)
             }
 
             val songNameView = TextView(context).apply {
@@ -58,25 +67,33 @@ class RecentlyPlayedAdapter(
                 textSize = 12f
             }
 
+            relLayout.addView(albumArtView)
             textLayout.addView(songNameView)
             textLayout.addView(timeView)
             relLayout.addView(textLayout)
             addView(relLayout)
 
             // Store references for ViewHolder
-            tag = Pair(songNameView, timeView)
+            tag = Triple(songNameView, timeView, albumArtView)
         }
 
         @Suppress("UNCHECKED_CAST")
-        val tagPair = cardView.tag as? Pair<TextView, TextView>
-        val (songNameView, timeView) = tagPair ?: Pair(TextView(parent.context), TextView(parent.context))
-        return RecentlyPlayedViewHolder(cardView, songNameView, timeView)
+        val tagTriple = cardView.tag as? Triple<TextView, TextView, ImageView>
+        val (songNameView, timeView, albumArtView) = tagTriple ?: Triple(TextView(parent.context), TextView(parent.context), ImageView(parent.context))
+        return RecentlyPlayedViewHolder(cardView, songNameView, timeView, albumArtView)
     }
 
     override fun onBindViewHolder(holder: RecentlyPlayedViewHolder, position: Int) {
         val song = recentSongs[position]
         holder.songName.text = song.songName
         holder.playedTime.text = formatTime(song.playedAt)
+        
+        Glide.with(holder.itemView.context)
+            .load(song.albumArtUri)
+            .placeholder(R.drawable.gradient_card_pop)
+            .error(R.drawable.gradient_card_pop)
+            .into(holder.albumArt)
+
         holder.itemView.setOnClickListener { onClick(position) }
     }
 
