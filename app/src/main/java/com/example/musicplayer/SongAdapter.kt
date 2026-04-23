@@ -9,11 +9,11 @@ import androidx.recyclerview.widget.RecyclerView
 
 class SongAdapter(
     private val songs: List<String>,
+    private val songPaths: List<String>,
+    private val likedSongPaths: HashSet<String>,
     private val onClick: (Int) -> Unit,
     private val onLikeClick: (Int, Boolean) -> Unit
 ) : RecyclerView.Adapter<SongAdapter.SongViewHolder>() {
-
-    private val likedSongs = MutableList(songs.size) { false }
 
     class SongViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val songName: TextView = view.findViewById(R.id.tvSongName)
@@ -32,7 +32,8 @@ class SongAdapter(
         // Use the new heart icon
         holder.btnLike.setImageResource(R.drawable.ic_heart)
         
-        if (likedSongs[position]) {
+        val isLiked = likedSongPaths.contains(songPaths[position])
+        if (isLiked) {
             holder.btnLike.setColorFilter(android.graphics.Color.parseColor("#FF69B4")) // Pink for liked
         } else {
             holder.btnLike.setColorFilter(android.graphics.Color.parseColor("#94A3B8")) // text_tertiary
@@ -41,8 +42,8 @@ class SongAdapter(
         holder.itemView.setOnClickListener { onClick(position) }
         
         holder.btnLike.setOnClickListener { 
-            likedSongs[position] = !likedSongs[position]
-            onLikeClick(position, likedSongs[position])
+            val newLiked = !isLiked
+            onLikeClick(position, newLiked)
             notifyItemChanged(position)
         }
     }

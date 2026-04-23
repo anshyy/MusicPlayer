@@ -1,11 +1,13 @@
 package com.example.musicplayer
 
+import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import java.util.ArrayList
 
 class PlaylistAdapter(
     private val playlists: List<Playlist>,
@@ -34,6 +36,7 @@ class PlaylistAdapter(
         } else {
             holder.ivPlaylist.setImageResource(android.R.drawable.ic_menu_gallery)
         }
+        
         holder.itemView.setOnClickListener { onClick(playlist) }
     }
 

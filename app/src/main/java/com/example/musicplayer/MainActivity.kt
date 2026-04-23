@@ -177,7 +177,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         
-        val adapter = SongAdapter(searchResultsList, { position ->
+        val adapter = SongAdapter(searchResultsList, searchResultsPaths, likedSongPaths, { position ->
             MusicPlayerManager.currentSongList = searchResultsList
             MusicPlayerManager.currentSongPaths = searchResultsPaths
             MusicPlayerManager.playSong(this, position)
@@ -244,7 +244,7 @@ class MainActivity : AppCompatActivity() {
         filteredSongList.addAll(songList)
         filteredSongPaths.addAll(songPaths)
 
-        val adapter = SongAdapter(filteredSongList, { position ->
+        val adapter = SongAdapter(filteredSongList, filteredSongPaths, likedSongPaths, { position ->
             MusicPlayerManager.currentSongList = filteredSongList
             MusicPlayerManager.currentSongPaths = filteredSongPaths
             MusicPlayerManager.playSong(this, position)
@@ -276,7 +276,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         
-        val likedAdapter = SongAdapter(likedSongs, { position ->
+        val likedAdapter = SongAdapter(likedSongs, likedPaths, likedSongPaths, { position ->
             MusicPlayerManager.currentSongList = likedSongs
             MusicPlayerManager.currentSongPaths = likedPaths
             MusicPlayerManager.playSong(this, position)
@@ -293,13 +293,23 @@ class MainActivity : AppCompatActivity() {
         val rvPlaylists = findViewById<RecyclerView>(R.id.rvPlaylists)
         rvPlaylists.layoutManager = LinearLayoutManager(this)
         val playlistAdapter = PlaylistAdapter(playlists, { playlist ->
-            MusicPlayerManager.currentSongList = playlist.songPaths
-            MusicPlayerManager.currentSongPaths = playlist.songPaths
-            if (playlist.songPaths.isNotEmpty()) {
-                MusicPlayerManager.playSong(this, 0)
-                addToRecentlyPlayed(playlist.songPaths[0], playlist.songPaths[0])
-                startActivity(Intent(this, PlayerActivity::class.java))
+            val context = this
+            val intent = Intent(context, ListDetailActivity::class.java).apply {
+                putExtra("list_title", playlist.name)
+                // Map the paths back to names
+                val names = ArrayList<String>()
+                val paths = ArrayList<String>()
+                for (path in playlist.songPaths) {
+                    val idx = songPaths.indexOf(path)
+                    if (idx != -1) {
+                        names.add(songList[idx])
+                        paths.add(path)
+                    }
+                }
+                putStringArrayListExtra("song_names", names)
+                putStringArrayListExtra("song_paths", paths)
             }
+            startActivity(intent)
         })
         rvPlaylists.adapter = playlistAdapter
     }
@@ -402,7 +412,3 @@ class MainActivity : AppCompatActivity() {
         rvRecentlyPlayed.adapter?.notifyDataSetChanged()
     }
 }
-
-
-
-

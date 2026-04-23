@@ -9,7 +9,8 @@ import androidx.recyclerview.widget.RecyclerView
 
 class PlaylistSongAdapter(
     private val songs: List<String>,
-    private val selectedSongs: ArrayList<String>,
+    private val songPaths: List<String>,
+    private val selectedPaths: ArrayList<String>,
     private val onSelectionChanged: (ArrayList<String>) -> Unit
 ) : RecyclerView.Adapter<PlaylistSongAdapter.SongViewHolder>() {
 
@@ -27,6 +28,8 @@ class PlaylistSongAdapter(
             radius = dp(12).toFloat()
             cardElevation = dp(2).toFloat()
             setCardBackgroundColor(parent.context.getColor(R.color.card_background))
+            val margin = dp(4).toInt()
+            (layoutParams as ViewGroup.MarginLayoutParams).setMargins(margin, margin, margin, margin)
 
             val linearLayout = android.widget.LinearLayout(parent.context).apply {
                 layoutParams = ViewGroup.LayoutParams(
@@ -64,21 +67,22 @@ class PlaylistSongAdapter(
     }
 
     override fun onBindViewHolder(holder: SongViewHolder, position: Int) {
-        val song = songs[position]
-        holder.tvSongName.text = song
+        val songName = songs[position]
+        val songPath = songPaths[position]
+        holder.tvSongName.text = songName
 
-        val isSelected = selectedSongs.contains(song)
+        val isSelected = selectedPaths.contains(songPath)
         holder.cbSelect.isChecked = isSelected
 
         holder.cardView.setOnClickListener {
-            if (isSelected) {
-                selectedSongs.remove(song)
+            if (selectedPaths.contains(songPath)) {
+                selectedPaths.remove(songPath)
                 holder.cbSelect.isChecked = false
             } else {
-                selectedSongs.add(song)
+                selectedPaths.add(songPath)
                 holder.cbSelect.isChecked = true
             }
-            onSelectionChanged(selectedSongs)
+            onSelectionChanged(ArrayList(selectedPaths)) // Create a copy to ensure updates
         }
     }
 

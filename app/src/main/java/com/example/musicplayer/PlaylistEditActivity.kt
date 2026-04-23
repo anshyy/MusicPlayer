@@ -86,7 +86,7 @@ class PlaylistEditActivity : AppCompatActivity() {
         }
 
         if (allSongs.isNotEmpty()) {
-            val adapter = PlaylistSongAdapter(allSongs, selectedSongPaths) { selectedPaths: ArrayList<String> ->
+            val adapter = PlaylistSongAdapter(allSongs, allSongPaths, selectedSongPaths) { selectedPaths: ArrayList<String> ->
                 this.selectedSongPaths.clear()
                 this.selectedSongPaths.addAll(selectedPaths)
             }

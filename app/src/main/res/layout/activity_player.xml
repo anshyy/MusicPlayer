@@ -95,32 +95,25 @@
 
     <!-- Progress Section -->
     <LinearLayout
+        android:id="@+id/llProgress"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@+id/cvAlbumArt"
-        android:layout_marginTop="140dp"
+        android:layout_marginTop="120dp"
         android:orientation="vertical"
         android:paddingHorizontal="32dp">
 
         <!-- Progress Bar -->
-        <androidx.cardview.widget.CardView
+        <SeekBar
+            android:id="@+id/seekBar"
             android:layout_width="match_parent"
-            android:layout_height="6dp"
-            android:layout_marginBottom="16dp"
-            app:cardBackgroundColor="@color/seek_bar_background"
-            app:cardCornerRadius="3dp">
-
-            <SeekBar
-                android:id="@+id/seekBar"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="@android:color/transparent"
-                android:maxHeight="6dp"
-                android:minHeight="6dp"
-                android:progressBackgroundTint="@color/seek_bar_background"
-                android:progressTint="@color/seek_bar_progress"
-                android:thumbTint="@color/seek_bar_thumb" />
-        </androidx.cardview.widget.CardView>
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:paddingStart="0dp"
+            android:paddingEnd="0dp"
+            android:progressBackgroundTint="@color/seek_bar_background"
+            android:progressTint="@color/seek_bar_progress"
+            android:thumbTint="@color/seek_bar_thumb" />
 
         <!-- Time Display -->
         <LinearLayout
@@ -135,7 +128,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="0:00"
-                android:textSize="14sp" />
+                android:textSize="12sp" />
 
             <TextView
                 android:id="@+id/tvTotalTime"
@@ -145,82 +138,66 @@
                 android:layout_weight="1"
                 android:gravity="end"
                 android:text="0:00"
-                android:textSize="14sp" />
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <!-- Shuffle & Loop Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/btnShuffle"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginEnd="32dp"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_shuffle"
+                app:tint="@color/text_tertiary" />
+
+            <ImageButton
+                android:id="@+id/btnRepeat"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="32dp"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_revert"
+                app:tint="@color/text_tertiary" />
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Controls -->
+    <!-- Main Controls -->
     <LinearLayout
         android:id="@+id/llControls"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_marginBottom="32dp"
+        android:layout_marginBottom="40dp"
         android:gravity="center"
-        android:orientation="horizontal"
-        android:paddingHorizontal="24dp">
-
-        <!-- Like Button -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="56dp"
-            android:layout_height="56dp"
-            android:layout_marginEnd="12dp"
-            app:cardBackgroundColor="@color/card_background"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="2dp">
-
-            <ImageButton
-                android:id="@+id/btnLike"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="?android:attr/selectableItemBackground"
-                android:src="@drawable/ic_heart"
-                app:tint="@color/accent_highlight" />
-        </androidx.cardview.widget.CardView>
-
-        <!-- Shuffle Button -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="56dp"
-            android:layout_height="56dp"
-            android:layout_marginEnd="16dp"
-            app:cardBackgroundColor="@color/card_background"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="2dp">
-
-            <ImageButton
-                android:id="@+id/btnShuffle"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="?android:attr/selectableItemBackground"
-                android:src="@drawable/ic_shuffle"
-                app:tint="@color/text_tertiary" />
-        </androidx.cardview.widget.CardView>
+        android:orientation="horizontal">
 
         <!-- Previous Button -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="64dp"
-            android:layout_height="64dp"
-            android:layout_marginEnd="20dp"
-            app:cardBackgroundColor="@color/card_background"
-            app:cardCornerRadius="24dp"
-            app:cardElevation="4dp">
-
-            <ImageButton
-                android:id="@+id/btnPrev"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="?android:attr/selectableItemBackground"
-                android:src="@android:drawable/ic_media_previous"
-                app:tint="@color/text_primary" />
-        </androidx.cardview.widget.CardView>
+        <ImageButton
+            android:id="@+id/btnPrev"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_marginEnd="24dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_media_previous"
+            android:scaleType="fitCenter"
+            android:padding="12dp"
+            app:tint="@color/text_primary" />
 
         <!-- Play/Pause Button (Main) -->
         <androidx.cardview.widget.CardView
-            android:layout_width="80dp"
-            android:layout_height="80dp"
+            android:layout_width="72dp"
+            android:layout_height="72dp"
             app:cardBackgroundColor="@color/button_primary"
-            app:cardCornerRadius="40dp"
-            app:cardElevation="8dp">
+            app:cardCornerRadius="36dp"
+            app:cardElevation="6dp">
 
             <ImageButton
                 android:id="@+id/btnPlay"
@@ -228,44 +205,35 @@
                 android:layout_height="match_parent"
                 android:background="?android:attr/selectableItemBackground"
                 android:src="@android:drawable/ic_media_pause"
+                android:padding="16dp"
+                android:scaleType="fitCenter"
                 app:tint="@color/text_primary" />
         </androidx.cardview.widget.CardView>
 
         <!-- Next Button -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="64dp"
-            android:layout_height="64dp"
-            android:layout_marginStart="20dp"
-            app:cardBackgroundColor="@color/card_background"
-            app:cardCornerRadius="24dp"
-            app:cardElevation="4dp">
-
-            <ImageButton
-                android:id="@+id/btnNext"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="?android:attr/selectableItemBackground"
-                android:src="@android:drawable/ic_media_next"
-                app:tint="@color/text_primary" />
-        </androidx.cardview.widget.CardView>
-
-        <!-- Repeat Button -->
-        <androidx.cardview.widget.CardView
+        <ImageButton
+            android:id="@+id/btnNext"
             android:layout_width="56dp"
             android:layout_height="56dp"
-            android:layout_marginStart="16dp"
-            app:cardBackgroundColor="@color/card_background"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="2dp">
-
-            <ImageButton
-                android:id="@+id/btnRepeat"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="?android:attr/selectableItemBackground"
-                android:src="@android:drawable/ic_menu_revert"
-                app:tint="@color/text_tertiary" />
-        </androidx.cardview.widget.CardView>
+            android:layout_marginStart="24dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_media_next"
+            android:scaleType="fitCenter"
+            android:padding="12dp"
+            app:tint="@color/text_primary" />
     </LinearLayout>
+
+    <!-- Like Button pushed to side -->
+    <ImageButton
+        android:id="@+id/btnLike"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_alignBottom="@+id/cvAlbumArt"
+        android:layout_toEndOf="@+id/cvAlbumArt"
+        android:layout_marginStart="16dp"
+        android:layout_marginBottom="8dp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_heart"
+        app:tint="@color/accent_highlight" />
 
 </RelativeLayout>
