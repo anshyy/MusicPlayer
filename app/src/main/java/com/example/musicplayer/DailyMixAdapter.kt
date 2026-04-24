@@ -8,7 +8,6 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.cardview.widget.CardView
-import androidx.core.graphics.toColorInt
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import java.util.ArrayList
@@ -18,84 +17,78 @@ class DailyMixAdapter(
     private val onClick: (DailyMix) -> Unit
 ) : RecyclerView.Adapter<DailyMixAdapter.DailyMixViewHolder>() {
 
-    class DailyMixViewHolder(val itemView: CardView, val titleText: TextView, val descText: TextView, val imageView: ImageView) : RecyclerView.ViewHolder(itemView)
+    class DailyMixViewHolder(val container: View, val imageView: ImageView, val titleView: TextView, val subtitleView: TextView) : RecyclerView.ViewHolder(container)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): DailyMixViewHolder {
         val context = parent.context
-        val cardView = CardView(context).apply {
+        
+        // Vertical layout to hold card and labels below it
+        val root = LinearLayout(context).apply {
             layoutParams = ViewGroup.MarginLayoutParams(
-                dpToPx(160),
-                dpToPx(160)
+                dpToPx(180),
+                ViewGroup.LayoutParams.WRAP_CONTENT
             ).apply {
                 setMargins(dpToPx(8), 0, dpToPx(8), 0)
             }
-            setCardBackgroundColor(context.getColor(R.color.card_background))
-            radius = dpToPx(24).toFloat()
-            cardElevation = 0f
-
-            val imageView = ImageView(context).apply {
-                layoutParams = ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT
-                )
-                scaleType = ImageView.ScaleType.CENTER_CROP
-                alpha = 0.6f
-            }
-
-            val linearLayout = LinearLayout(context).apply {
-                layoutParams = ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT
-                )
-                orientation = LinearLayout.VERTICAL
-                gravity = android.view.Gravity.BOTTOM
-                setPadding(dpToPx(16), dpToPx(16), dpToPx(16), dpToPx(16))
-            }
-
-            val titleView = TextView(context).apply {
-                setTextColor(Color.WHITE)
-                textSize = 16f
-                setTypeface(null, android.graphics.Typeface.BOLD)
-            }
-
-            val descView = TextView(context).apply {
-                setTextColor("#A0A0AB".toColorInt())
-                textSize = 12f
-                alpha = 0.8f
-            }
-
-            addView(imageView)
-            linearLayout.addView(titleView)
-            linearLayout.addView(descView)
-            addView(linearLayout)
-
-            tag = Triple(titleView, descView, imageView)
+            orientation = LinearLayout.VERTICAL
         }
 
-        @Suppress("UNCHECKED_CAST")
-        val tagTriple = cardView.tag as? Triple<TextView, TextView, ImageView>
-        val (titleText, descText, imageView) = tagTriple ?: Triple(TextView(context), TextView(context), ImageView(context))
-        return DailyMixViewHolder(cardView, titleText, descText, imageView)
+        val cardView = CardView(context).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                dpToPx(180)
+            )
+            radius = dpToPx(8).toFloat()
+            cardElevation = 4f
+        }
+
+        val imageView = ImageView(context).apply {
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+            scaleType = ImageView.ScaleType.CENTER_CROP
+        }
+        cardView.addView(imageView)
+
+        val titleView = TextView(context).apply {
+            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                topMargin = dpToPx(8)
+            }
+            setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_primary))
+            textSize = 15f
+            maxLines = 1
+            ellipsize = android.text.TextUtils.TruncateAt.END
+        }
+
+        val subtitleView = TextView(context).apply {
+            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_secondary))
+            textSize = 13f
+            maxLines = 1
+            ellipsize = android.text.TextUtils.TruncateAt.END
+        }
+
+        root.addView(cardView)
+        root.addView(titleView)
+        root.addView(subtitleView)
+
+        return DailyMixViewHolder(root, imageView, titleView, subtitleView)
     }
 
     override fun onBindViewHolder(holder: DailyMixViewHolder, position: Int) {
         val mix = dailyMixes[position]
-        holder.titleText.text = mix.title
-        holder.descText.text = mix.description
+        holder.titleView.text = mix.title
+        holder.subtitleView.text = mix.description
 
         if (mix.imageUri != null) {
             Glide.with(holder.itemView.context)
                 .load(mix.imageUri)
+                .placeholder(R.drawable.gradient_card_pop)
                 .into(holder.imageView)
-            holder.itemView.setCardBackgroundColor(Color.BLACK)
         } else {
-            // Use colors from palette for horizontal items if no image
             val colors = listOf("#2D60FF", "#7000FF", "#00D1FF", "#FF2D55")
-            try {
-                holder.itemView.setCardBackgroundColor(Color.parseColor(colors[position % colors.size]))
-            } catch (e: Exception) {
-                holder.itemView.setCardBackgroundColor(holder.itemView.context.getColor(R.color.accent_primary))
-            }
+            holder.imageView.setBackgroundColor(Color.parseColor(colors[position % colors.size]))
             holder.imageView.setImageDrawable(null)
         }
 
@@ -113,6 +106,7 @@ class DailyMixAdapter(
     override fun getItemCount() = dailyMixes.size
 
     private fun dpToPx(dp: Int): Int {
-        return (dp * 2.5).toInt()
+        val displayMetrics = android.content.res.Resources.getSystem().displayMetrics
+        return (dp * displayMetrics.density).toInt()
     }
 }

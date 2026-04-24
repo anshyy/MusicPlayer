@@ -1,38 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Modern Dark Theme - Deep Blue & Neon Accents -->
-    <color name="primary_background">#09090F</color>
-    <color name="secondary_background">#12121F</color>
-    <color name="card_background">#1A1A2E</color>
-    <color name="accent_primary">#2D60FF</color>
-    <color name="accent_secondary">#7000FF</color>
-    <color name="accent_highlight">#00D1FF</color>
+    <!-- Modern Dark Music-style Theme -->
+    <color name="primary_background">#000000</color>
+    <color name="secondary_background">#1C1C1E</color>
+    <color name="card_background">#1C1C1E</color>
+    <color name="accent_primary">#FA243C</color> <!-- Apple Music Red -->
+    <color name="accent_secondary">#FF2D55</color>
+    <color name="accent_highlight">#FA233B</color>
 
     <!-- Text Colors -->
     <color name="text_primary">#FFFFFF</color>
-    <color name="text_secondary">#A0A0AB</color>
-    <color name="text_tertiary">#66667A</color>
-    <color name="text_hint">#444455</color>
+    <color name="text_secondary">#8E8E93</color>
+    <color name="text_tertiary">#AEAEB2</color>
+    <color name="text_hint">#48484A</color>
 
     <!-- Interactive Colors -->
-    <color name="button_primary">#2D60FF</color>
-    <color name="button_pressed">#1A4AD9</color>
-    <color name="button_disabled">#2A2A3D</color>
+    <color name="button_primary">#0A84FF</color>
+    <color name="button_pressed">#0040DD</color>
+    <color name="button_disabled">#2C2C2E</color>
 
     <!-- Status Colors -->
-    <color name="success">#00E676</color>
-    <color name="warning">#FFD600</color>
-    <color name="error">#FF1744</color>
+    <color name="success">#30D158</color>
+    <color name="warning">#FFD60A</color>
+    <color name="error">#FF453A</color>
 
     <!-- Seek Bar Colors -->
-    <color name="seek_bar_background">#2A2A3D</color>
-    <color name="seek_bar_progress">#2D60FF</color>
+    <color name="seek_bar_background">#3A3A3C</color>
+    <color name="seek_bar_progress">#FA243C</color>
     <color name="seek_bar_thumb">#FFFFFF</color>
+
+    <!-- Bottom Nav Colors -->
+    <color name="bottom_nav_selected">#FA243C</color>
 
     <!-- Categories / Mixes -->
     <color name="cat_hiphop">#FF2D55</color>
-    <color name="cat_pop">#00D1FF</color>
-    <color name="cat_blues">#7000FF</color>
+    <color name="cat_pop">#0A84FF</color>
+    <color name="cat_blues">#BF5AF2</color>
     <color name="cat_rock">#FF9F0A</color>
 
     <!-- Legacy Colors (for compatibility) -->

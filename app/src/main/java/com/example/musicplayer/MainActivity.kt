@@ -10,8 +10,10 @@ import android.text.TextWatcher
 import android.view.View
 import android.widget.EditText
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import com.bumptech.glide.Glide
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -41,10 +43,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var rvSearchResults: RecyclerView
     private lateinit var etSearchTabInput: EditText
     private lateinit var tvTitle: TextView
+    private lateinit var authContainer: View
+    private lateinit var profileContainer: View
+
+    private var isLoggedIn = false
+    private lateinit var sharedPreferences: android.content.SharedPreferences
 
     private val songList = ArrayList<Song>()
     private val searchResultsList = ArrayList<Song>()
-    private val likedSongPaths = HashSet<String>()
     private val recentlyPlayedSongs = ArrayList<RecentlyPlayed>()
     private val dailyMixes = ArrayList<DailyMix>()
     private val playlists = ArrayList<Playlist>()
@@ -58,6 +64,27 @@ class MainActivity : AppCompatActivity() {
             playlists.add(Playlist(name, imageUri, playlistSongs))
             setupLibraryView()
         }
+    }
+
+    private val songChangedListener: (Int) -> Unit = { _ ->
+        tvMiniSongName.text = MusicPlayerManager.getCurrentSongName()
+        val uri = MusicPlayerManager.getCurrentSongArtUri()
+        if (uri != null && !isFinishing && !isDestroyed) {
+            Glide.with(this).load(uri).into(findViewById<ImageView>(R.id.ivMiniArt))
+        }
+        miniPlayer.visibility = View.VISIBLE
+    }
+
+    private val playbackStatusListener: (Boolean) -> Unit = { isPlaying ->
+        btnMiniPlay.setImageResource(if (isPlaying) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play)
+    }
+
+    private val likedSongsChangeListener: () -> Unit = {
+        saveLikedSongs()
+        setupLibraryView()
+        // Refresh adapters if needed
+        recyclerView.adapter?.notifyDataSetChanged()
+        rvSearchResults.adapter?.notifyDataSetChanged()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -87,27 +114,39 @@ class MainActivity : AppCompatActivity() {
         btnMiniPlay = findViewById(R.id.btnMiniPlay)
         tvTitle = findViewById(R.id.tvTitle)
         etSearchTabInput = findViewById(R.id.etSearchTabInput)
+        authContainer = findViewById(R.id.authContainer)
+        profileContainer = findViewById(R.id.profileContainer)
+
+        sharedPreferences = getSharedPreferences("MusicPlayerPrefs", MODE_PRIVATE)
+        isLoggedIn = sharedPreferences.getBoolean("isLoggedIn", false)
+        val savedLikes = sharedPreferences.getStringSet("likedSongs", emptySet())
+        if (savedLikes != null) {
+            MusicPlayerManager.likedSongPaths.clear()
+            MusicPlayerManager.likedSongPaths.addAll(savedLikes)
+        }
+        updateAuthUI()
 
         findViewById<ImageButton>(R.id.btnMenu).setOnClickListener {
             drawerLayout.openDrawer(GravityCompat.START)
         }
 
-        findViewById<ImageButton>(R.id.btnSearch).setOnClickListener {
-            switchToSearchTab()
+        findViewById<TextView>(R.id.btnLogin).setOnClickListener {
+            startActivity(Intent(this, LoginActivity::class.java))
+        }
+
+        findViewById<ImageView>(R.id.btnProfile).setOnClickListener {
+            showProfileMenu(it)
         }
 
         navView.setNavigationItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
-                R.id.nav_home -> switchToHomeTab()
-                R.id.nav_friends -> Toast.makeText(this, "Friends clicked", Toast.LENGTH_SHORT).show()
-                R.id.nav_settings -> Toast.makeText(this, "Settings clicked", Toast.LENGTH_SHORT).show()
+                R.id.nav_home -> bottomNav.selectedItemId = R.id.nav_home
+                R.id.nav_friends -> startActivity(Intent(this, FriendsActivity::class.java))
+                R.id.nav_settings -> startActivity(Intent(this, SettingsActivity::class.java))
             }
             drawerLayout.closeDrawer(GravityCompat.START)
             true
         }
-
-        // Setup category clicks
-        setupCategoryClicks()
 
         miniPlayer.setOnClickListener {
             val intent = Intent(this, PlayerActivity::class.java)
@@ -118,105 +157,83 @@ class MainActivity : AppCompatActivity() {
             MusicPlayerManager.togglePlayPause()
         }
 
-        MusicPlayerManager.onPlaybackStatusChanged = { isPlaying ->
-            btnMiniPlay.setImageResource(if (isPlaying) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play)
-        }
-
-        MusicPlayerManager.onSongChanged = { _ ->
-            tvMiniSongName.text = MusicPlayerManager.getCurrentSongName()
-            miniPlayer.visibility = View.VISIBLE
-        }
+        MusicPlayerManager.addOnPlaybackStatusChangedListener(playbackStatusListener)
+        MusicPlayerManager.addOnSongChangedListener(songChangedListener)
+        MusicPlayerManager.addOnLikedSongsChangedListener(likedSongsChangeListener)
 
         bottomNav.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.nav_home -> {
-                    switchToHomeTab()
-                    true
-                }
-                R.id.nav_library -> {
-                    switchToLibraryTab()
-                    true
-                }
-                R.id.nav_search -> {
-                    switchToSearchTab()
-                    true
-                }
-                else -> false
-            }
+            updateTab(item.itemId)
+            true
         }
 
-        findViewById<ImageButton>(R.id.btnAddPlaylist).setOnClickListener {
-            val intent = Intent(this, PlaylistEditActivity::class.java)
-            createPlaylistLauncher.launch(intent)
-        }
+        // Set initial state
+        updateTab(R.id.nav_home)
 
         // Setup search tab listener
         setupSearchListener()
+
+        // Load background image
+        Glide.with(this)
+            .load("https://w0.peakpx.com/wallpaper/559/385/HD-wallpaper-monkey-d-luffy-one-piece-anime.jpg")
+            .into(findViewById<ImageView>(R.id.appBackground))
 
         if (hasPermission()) {
             loadSongs()
         } else {
             requestPermission()
         }
+        mockArtistSongs()
     }
 
-    private fun setupCategoryClicks() {
-        findViewById<View>(R.id.catHipHop).setOnClickListener {
-            openCategoryPlaylist("Hip Hop")
+    private fun mockArtistSongs() {
+        val artistImage = android.net.Uri.parse("https://i.scdn.co/image/ab6761610000e5eb1d206f47055728a55639e763") // Juice WRLD Image
+        val juiceSongs = listOf(
+            "Lucid Dreams", "All Girls Are The Same", "Robbery", "Wishing Well", "Come & Go",
+            "Lean Wit Me", "Legends", "Righteous", "Empty", "Black & White",
+            "Fast", "Maze", "Flaws and Sins", "Hear Me Calling", "Ring Ring",
+            "Fine China", "Wasted", "Armed and Dangerous", "Rich and Blind", "Candles",
+            "Scared of Love", "Used To", "Hurt Me", "I'll Be Fine", "734",
+            "Already Dead", "Cigarettes", "Go Hard", "Feline", "Rockstar In His Prime",
+            "Burn", "You Wouldn't Understand", "Sometimes", "Not Enough", "Doom",
+            "Relocate", "Reminds Me Of You", "Smile", "Real Shit", "Bad Boy",
+            "Life's A Mess", "Tell Me U Luv Me", "Conversations", "Titanic", "Bad Energy",
+            "Blood On My Jeans", "Hate The Other Side", "I Want It", "Fighting Demons", "Up Up and Away",
+            "Stay High", "Can't Die", "Man Of The Year", "Screw Juice", "The Bees Knees",
+            "HeMotions", "Feeling", "Syphilis", "Who Shot Cupid?", "10 Feet",
+            "Won't Let Go", "She's The One", "Rider", "Make Believe", "No Issue",
+            "Astronauts", "7 AM Freestyle", "Jet Lag", "Hard Work Pays Off", "Realer N Realer",
+            "No Bystanders", "Can't Leave Without It", "MoshPit", "Demons and Angels", "Yell-Oh",
+            "Suicidal (Remix)", "Flex", "PTSD", "Hate Me", "Ransom (Remix)",
+            "Nuketown", "On God", "1400 / 999 Freestyle", "Matt Hardy 999", "Blastoff",
+            "Buck 50", "Paranoid", "Autograph (On My Line)", "My Fault", "Golden X82",
+            "Moonlight", "Let Me Know (I Wonder Why Freestyle)", "Eye of the Tiger", "Run", "Girl Of My Dreams",
+            "You Might Need It", "Inner Peace", "High Tide", "Remind Me of the Summer", "Carry It"
+        )
+
+        juiceSongs.forEachIndexed { index, title ->
+            songList.add(Song(title, "Juice WRLD", "mock_path_$index", index.toLong(), artistImage))
         }
-        findViewById<View>(R.id.catPop).setOnClickListener {
-            openCategoryPlaylist("Pop Music")
-        }
-        findViewById<View>(R.id.catBlues).setOnClickListener {
-            openCategoryPlaylist("Blues")
-        }
+        recyclerView.adapter?.notifyDataSetChanged()
     }
 
-    private fun openCategoryPlaylist(category: String) {
-        val filteredSongs = ArrayList<String>()
-        val filteredPaths = ArrayList<String>()
-        
-        // Simulating category filtering - in a real app you'd have genre metadata
-        // For now, we'll just pick some random songs if the list is large enough
-        if (songList.isNotEmpty()) {
-            for (i in 0 until minOf(10, songList.size)) {
-                filteredSongs.add(songList[i].title)
-                filteredPaths.add(songList[i].path)
+    private fun updateTab(itemId: Int) {
+        homeView.visibility = if (itemId == R.id.nav_home) View.VISIBLE else View.GONE
+        libraryView.visibility = if (itemId == R.id.nav_library) View.VISIBLE else View.GONE
+        searchView.visibility = if (itemId == R.id.nav_search) View.VISIBLE else View.GONE
+
+        when (itemId) {
+            R.id.nav_home -> {
+                tvTitle.text = "Listen Now"
+            }
+            R.id.nav_library -> {
+                tvTitle.text = "Library"
+                setupLibraryView()
+            }
+            R.id.nav_search -> {
+                tvTitle.text = "Search"
+                etSearchTabInput.requestFocus()
             }
         }
-
-        val intent = Intent(this, ListDetailActivity::class.java).apply {
-            putExtra("list_title", category)
-            putStringArrayListExtra("song_names", filteredSongs)
-            putStringArrayListExtra("song_paths", filteredPaths)
-        }
-        startActivity(intent)
-    }
-
-    private fun switchToHomeTab() {
-        homeView.visibility = View.VISIBLE
-        libraryView.visibility = View.GONE
-        searchView.visibility = View.GONE
-        tvTitle.text = "Home"
-        bottomNav.selectedItemId = R.id.nav_home
-    }
-
-    private fun switchToLibraryTab() {
-        homeView.visibility = View.GONE
-        libraryView.visibility = View.VISIBLE
-        searchView.visibility = View.GONE
-        tvTitle.text = "Library"
-        bottomNav.selectedItemId = R.id.nav_library
-        setupLibraryView()
-    }
-
-    private fun switchToSearchTab() {
-        homeView.visibility = View.GONE
-        libraryView.visibility = View.GONE
-        searchView.visibility = View.VISIBLE
-        tvTitle.text = "Search"
-        bottomNav.selectedItemId = R.id.nav_search
-        etSearchTabInput.requestFocus()
     }
 
     private fun setupSearchListener() {
@@ -244,21 +261,23 @@ class MainActivity : AppCompatActivity() {
             }
         }
         
-        val adapter = SongAdapter(searchResultsList, likedSongPaths, { position ->
-            val song = searchResultsList[position]
-            MusicPlayerManager.currentSongList = searchResultsList.map { it.title }
-            MusicPlayerManager.currentSongPaths = searchResultsList.map { it.path }
-            MusicPlayerManager.currentSongArtUris = searchResultsList.map { it.albumArtUri }
-            MusicPlayerManager.currentArtists = searchResultsList.map { it.artist }
-            MusicPlayerManager.playSong(this, position)
-            addToRecentlyPlayed(song)
-            val intent = Intent(this, PlayerActivity::class.java)
-            startActivity(intent)
-        }, { position, isLiked ->
-            val path = searchResultsList[position].path
-            if (isLiked) likedSongPaths.add(path) else likedSongPaths.remove(path)
-        })
-        rvSearchResults.adapter = adapter
+        if (rvSearchResults.adapter == null) {
+            val adapter = SongAdapter(searchResultsList, MusicPlayerManager.likedSongPaths, { position ->
+                val song = searchResultsList[position]
+                MusicPlayerManager.currentSongList = searchResultsList.map { it.title }
+                MusicPlayerManager.currentSongPaths = searchResultsList.map { it.path }
+                MusicPlayerManager.currentSongArtUris = searchResultsList.map { it.albumArtUri }
+                MusicPlayerManager.currentArtists = searchResultsList.map { it.artist }
+                MusicPlayerManager.playSong(this, position)
+                addToRecentlyPlayed(song)
+            }, { position, _ ->
+                val path = searchResultsList[position].path
+                MusicPlayerManager.toggleLike(path)
+            })
+            rvSearchResults.adapter = adapter
+        } else {
+            rvSearchResults.adapter?.notifyDataSetChanged()
+        }
     }
 
     private fun hasPermission(): Boolean {
@@ -320,34 +339,35 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        val adapter = SongAdapter(songList, likedSongPaths, { position ->
+        val adapter = SongAdapter(songList, MusicPlayerManager.likedSongPaths, { position ->
             MusicPlayerManager.currentSongList = songList.map { it.title }
             MusicPlayerManager.currentSongPaths = songList.map { it.path }
             MusicPlayerManager.currentSongArtUris = songList.map { it.albumArtUri }
             MusicPlayerManager.currentArtists = songList.map { it.artist }
             MusicPlayerManager.playSong(this, position)
             addToRecentlyPlayed(songList[position])
-
-            val intent = Intent(this, PlayerActivity::class.java)
-            startActivity(intent)
-        }, { position, isLiked ->
+        }, { position, _ ->
             val path = songList[position].path
-            if (isLiked) likedSongPaths.add(path) else likedSongPaths.remove(path)
-            setupLibraryView()
+            MusicPlayerManager.toggleLike(path)
         })
         recyclerView.adapter = adapter
 
         // Setup homepage with daily mixes and recently played
         setupHomepage()
+        setupLibraryView()
     }
 
     private fun setupLibraryView() {
         val rvLiked = findViewById<RecyclerView>(R.id.rvLikedSongs)
         rvLiked.layoutManager = LinearLayoutManager(this)
         
-        val likedSongs = songList.filter { likedSongPaths.contains(it.path) }
+        val likedSongs = songList.filter { MusicPlayerManager.likedSongPaths.contains(it.path) }
         
-        val likedAdapter = SongAdapter(likedSongs, likedSongPaths, { position ->
+        if (likedSongs.isEmpty()) {
+            // No songs liked yet
+        }
+
+        val likedAdapter = SongAdapter(likedSongs, MusicPlayerManager.likedSongPaths, { position ->
             val song = likedSongs[position]
             MusicPlayerManager.currentSongList = likedSongs.map { it.title }
             MusicPlayerManager.currentSongPaths = likedSongs.map { it.path }
@@ -355,22 +375,25 @@ class MainActivity : AppCompatActivity() {
             MusicPlayerManager.currentArtists = likedSongs.map { it.artist }
             MusicPlayerManager.playSong(this, position)
             addToRecentlyPlayed(song)
-            startActivity(Intent(this, PlayerActivity::class.java))
-        }, { position, isLiked ->
-            if (!isLiked) {
-                likedSongPaths.remove(likedSongs[position].path)
-                setupLibraryView()
-            }
+        }, { position, _ ->
+            val path = likedSongs[position].path
+            MusicPlayerManager.toggleLike(path)
         })
         rvLiked.adapter = likedAdapter
 
         val rvPlaylists = findViewById<RecyclerView>(R.id.rvPlaylists)
         rvPlaylists.layoutManager = LinearLayoutManager(this)
+        
+        // Add some mock playlists if empty for demonstration
+        if (playlists.isEmpty() && songList.isNotEmpty()) {
+            playlists.add(Playlist("My Favorites", null, ArrayList(songList.take(5).map { it.path })))
+            playlists.add(Playlist("Chill Mix", null, ArrayList(songList.takeLast(5).map { it.path })))
+        }
+
         val playlistAdapter = PlaylistAdapter(playlists, { playlist ->
             val context = this
             val intent = Intent(context, ListDetailActivity::class.java).apply {
                 putExtra("list_title", playlist.name)
-                // Map the paths back to names
                 val names = ArrayList<String>()
                 val paths = ArrayList<String>()
                 for (path in playlist.songPaths) {
@@ -421,8 +444,8 @@ class MainActivity : AppCompatActivity() {
 
             for (j in 0 until songsPerMix) {
                 val idx = (startIndex + j) % songList.size
-                mixSongs.add(songList[idx])
-                mixPaths.add(songPaths[idx])
+                mixSongs.add(songList[idx].title)
+                mixPaths.add(songList[idx].path)
             }
 
             dailyMixes.add(DailyMix(
@@ -458,7 +481,6 @@ class MainActivity : AppCompatActivity() {
             if (mix.songPaths.isNotEmpty()) {
                 MusicPlayerManager.playSong(this, 0)
                 addToRecentlyPlayed(songList.find { it.path == mix.songPaths[0] } ?: Song(mix.songs[0], "Unknown", mix.songPaths[0], 0))
-                startActivity(Intent(this, PlayerActivity::class.java))
             }
         }
         rvDailyMixes.adapter = dailyMixAdapter
@@ -473,7 +495,6 @@ class MainActivity : AppCompatActivity() {
                 MusicPlayerManager.currentSongArtUris = songList.map { it.albumArtUri }
                 MusicPlayerManager.currentArtists = songList.map { it.artist }
                 MusicPlayerManager.playSong(this, idx)
-                startActivity(Intent(this, PlayerActivity::class.java))
             }
         }
         rvRecentlyPlayed.adapter = recentlyPlayedAdapter
@@ -493,5 +514,52 @@ class MainActivity : AppCompatActivity() {
 
         // Update adapter
         rvRecentlyPlayed.adapter?.notifyDataSetChanged()
+    }
+
+    private fun saveLikedSongs() {
+        sharedPreferences.edit().putStringSet("likedSongs", MusicPlayerManager.likedSongPaths).apply()
+    }
+
+    private fun updateAuthUI() {
+        if (isLoggedIn) {
+            authContainer.visibility = View.GONE
+            profileContainer.visibility = View.VISIBLE
+        } else {
+            authContainer.visibility = View.VISIBLE
+            profileContainer.visibility = View.GONE
+        }
+    }
+
+    private fun saveLoginState(loggedIn: Boolean) {
+        isLoggedIn = loggedIn
+        sharedPreferences.edit().putBoolean("isLoggedIn", loggedIn).apply()
+        updateAuthUI()
+    }
+
+    private fun showProfileMenu(view: View) {
+        val popup = android.widget.PopupMenu(this, view)
+        popup.menu.add("View Profile")
+        popup.menu.add("Logout")
+        
+        popup.setOnMenuItemClickListener { item ->
+            when (item.title) {
+                "View Profile" -> {
+                    Toast.makeText(this, "Profile feature coming soon!", Toast.LENGTH_SHORT).show()
+                }
+                "Logout" -> {
+                    saveLoginState(false)
+                    Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show()
+                }
+            }
+            true
+        }
+        popup.show()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        MusicPlayerManager.removeOnSongChangedListener(songChangedListener)
+        MusicPlayerManager.removeOnPlaybackStatusChangedListener(playbackStatusListener)
+        MusicPlayerManager.removeOnLikedSongsChangedListener(likedSongsChangeListener)
     }
 }

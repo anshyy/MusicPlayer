@@ -97,6 +97,11 @@ class RegisterActivity : AppCompatActivity() {
             // Registration "successful"
             Toast.makeText(this, "Welcome to Music Player, $username! 🎵", Toast.LENGTH_LONG).show()
 
+            // Save login state
+            getSharedPreferences("MusicPlayerPrefs", MODE_PRIVATE).edit()
+                .putBoolean("isLoggedIn", true)
+                .apply()
+
             // Navigate to main app
             val intent = Intent(this, MainActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK

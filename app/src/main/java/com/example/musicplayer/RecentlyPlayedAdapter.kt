@@ -1,12 +1,10 @@
 package com.example.musicplayer
 
-import android.graphics.Color
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.cardview.widget.CardView
-import androidx.core.graphics.toColorInt
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import java.text.SimpleDateFormat
@@ -17,70 +15,65 @@ class RecentlyPlayedAdapter(
     private val onClick: (Int) -> Unit
 ) : RecyclerView.Adapter<RecentlyPlayedAdapter.RecentlyPlayedViewHolder>() {
 
-    class RecentlyPlayedViewHolder(itemView: CardView, val songName: TextView, val playedTime: TextView, val albumArt: ImageView) : RecyclerView.ViewHolder(itemView)
+    class RecentlyPlayedViewHolder(itemView: android.view.View, val songName: TextView, val playedTime: TextView, val albumArt: ImageView) : RecyclerView.ViewHolder(itemView)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecentlyPlayedViewHolder {
         val context = parent.context
-        val cardView = CardView(context).apply {
+        
+        val linearLayout = LinearLayout(context).apply {
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                dpToPx(72)
+                ViewGroup.LayoutParams.WRAP_CONTENT
             )
-            setCardBackgroundColor("#1E1E2E".toColorInt())
-            radius = dpToPx(16).toFloat()
-            cardElevation = dpToPx(2).toFloat()
-
-            val relLayout = LinearLayout(context).apply {
-                layoutParams = ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT
-                )
-                orientation = LinearLayout.HORIZONTAL
-                setPadding(dpToPx(16), dpToPx(12), dpToPx(16), dpToPx(12))
-                gravity = android.view.Gravity.CENTER_VERTICAL
-            }
-
-            val albumArtView = ImageView(context).apply {
-                layoutParams = ViewGroup.LayoutParams(dpToPx(48), dpToPx(48))
-                scaleType = ImageView.ScaleType.CENTER_CROP
-            }
-
-            val textLayout = LinearLayout(context).apply {
-                layoutParams = LinearLayout.LayoutParams(
-                    0,
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    1f
-                )
-                orientation = LinearLayout.VERTICAL
-                setPadding(dpToPx(12), 0, 0, 0)
-            }
-
-            val songNameView = TextView(context).apply {
-                setTextColor(Color.WHITE)
-                textSize = 16f
-                isSingleLine = true
-                ellipsize = android.text.TextUtils.TruncateAt.END
-            }
-
-            val timeView = TextView(context).apply {
-                setTextColor("#909090".toColorInt())
-                textSize = 12f
-            }
-
-            relLayout.addView(albumArtView)
-            textLayout.addView(songNameView)
-            textLayout.addView(timeView)
-            relLayout.addView(textLayout)
-            addView(relLayout)
-
-            // Store references for ViewHolder
-            tag = Triple(songNameView, timeView, albumArtView)
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(dpToPx(24), dpToPx(8), dpToPx(24), dpToPx(8))
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            
+            val attrs = intArrayOf(android.R.attr.selectableItemBackground)
+            val typedArray = context.obtainStyledAttributes(attrs)
+            background = typedArray.getDrawable(0)
+            typedArray.recycle()
+            
+            isClickable = true
+            isFocusable = true
         }
 
-        @Suppress("UNCHECKED_CAST")
-        val tagTriple = cardView.tag as? Triple<TextView, TextView, ImageView>
-        val (songNameView, timeView, albumArtView) = tagTriple ?: Triple(TextView(parent.context), TextView(parent.context), ImageView(parent.context))
-        return RecentlyPlayedViewHolder(cardView, songNameView, timeView, albumArtView)
+        val cardView = CardView(context).apply {
+            layoutParams = LinearLayout.LayoutParams(dpToPx(48), dpToPx(48))
+            radius = dpToPx(4).toFloat()
+            cardElevation = 2f
+        }
+
+        val albumArtView = ImageView(context).apply {
+            layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+            scaleType = ImageView.ScaleType.CENTER_CROP
+        }
+        cardView.addView(albumArtView)
+
+        val textLayout = LinearLayout(context).apply {
+            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+            orientation = LinearLayout.VERTICAL
+            setPadding(dpToPx(12), 0, 0, 0)
+        }
+
+        val songNameView = TextView(context).apply {
+            setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_primary))
+            textSize = 16f
+            isSingleLine = true
+            ellipsize = android.text.TextUtils.TruncateAt.END
+        }
+
+        val timeView = TextView(context).apply {
+            setTextColor(androidx.core.content.ContextCompat.getColor(context, R.color.text_secondary))
+            textSize = 12f
+        }
+
+        linearLayout.addView(cardView)
+        textLayout.addView(songNameView)
+        textLayout.addView(timeView)
+        linearLayout.addView(textLayout)
+
+        return RecentlyPlayedViewHolder(linearLayout, songNameView, timeView, albumArtView)
     }
 
     override fun onBindViewHolder(holder: RecentlyPlayedViewHolder, position: Int) {
@@ -91,7 +84,6 @@ class RecentlyPlayedAdapter(
         Glide.with(holder.itemView.context)
             .load(song.albumArtUri)
             .placeholder(R.drawable.gradient_card_pop)
-            .error(R.drawable.gradient_card_pop)
             .into(holder.albumArt)
 
         holder.itemView.setOnClickListener { onClick(position) }
@@ -107,17 +99,12 @@ class RecentlyPlayedAdapter(
             diff < 60000 -> "Just now"
             diff < 3600000 -> "${diff / 60000} min ago"
             diff < 86400000 -> "${diff / 3600000}h ago"
-            diff < 604800000 -> "${diff / 86400000}d ago"
             else -> SimpleDateFormat("MMM dd", Locale.getDefault()).format(Date(timestamp))
         }
     }
 
     private fun dpToPx(dp: Int): Int {
-        return (dp * 2.5).toInt()
+        val displayMetrics = android.content.res.Resources.getSystem().displayMetrics
+        return (dp * displayMetrics.density).toInt()
     }
 }
-
-
-
-
-

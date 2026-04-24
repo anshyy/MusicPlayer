@@ -1,6 +1,5 @@
 package com.example.musicplayer
 
-import android.content.Intent
 import android.os.Bundle
 import android.widget.ImageButton
 import android.widget.TextView
@@ -23,11 +22,14 @@ class ListDetailActivity : AppCompatActivity() {
         val rvSongs = findViewById<RecyclerView>(R.id.rvListSongs)
         rvSongs.layoutManager = LinearLayoutManager(this)
         
-        val adapter = SongAdapter(songNames, songPaths, HashSet<String>(), { position ->
+        val songs = songNames.indices.map { i ->
+            Song(songNames[i], "Unknown Artist", songPaths[i], 0, null)
+        }
+
+        val adapter = SongAdapter(songs, HashSet<String>(), { position ->
             MusicPlayerManager.currentSongList = songNames
             MusicPlayerManager.currentSongPaths = songPaths
             MusicPlayerManager.playSong(this, position)
-            startActivity(Intent(this, PlayerActivity::class.java))
         }, { _, _ -> 
             // Handle like if needed
         })
@@ -42,7 +44,6 @@ class ListDetailActivity : AppCompatActivity() {
                 MusicPlayerManager.currentSongList = songNames
                 MusicPlayerManager.currentSongPaths = songPaths
                 MusicPlayerManager.playSong(this, 0)
-                startActivity(Intent(this, PlayerActivity::class.java))
             }
         }
     }

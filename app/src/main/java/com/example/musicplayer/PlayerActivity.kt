@@ -27,6 +27,16 @@ class PlayerActivity : AppCompatActivity() {
     private lateinit var seekBar: SeekBar
 
     private val handler = Handler(Looper.getMainLooper())
+    
+    private val songChangedListener: (Int) -> Unit = {
+        updateUI()
+    }
+
+    private val playbackStatusListener: (Boolean) -> Unit = { isPlaying ->
+        btnPlay.setImageResource(if (isPlaying) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play)
+        updateUI() // To handle potential background color updates or scaling if needed later
+    }
+
     private val updateSeekBar = object : Runnable {
         override fun run() {
             MusicPlayerManager.getMediaPlayer()?.let {
@@ -37,6 +47,10 @@ class PlayerActivity : AppCompatActivity() {
             }
             handler.postDelayed(this, 1000)
         }
+    }
+
+    private val likedSongsChangeListener: () -> Unit = {
+        updateLikeButtonUI()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -82,23 +96,15 @@ class PlayerActivity : AppCompatActivity() {
         }
 
         btnLike.setOnClickListener {
-            // Toggle like - for now just visual feedback
-            val currentColor = btnLike.colorFilter
-            val newColor = if (currentColor == null) {
-                android.graphics.Color.parseColor("#FF69B4") // Pink for liked
-            } else {
-                android.graphics.Color.parseColor("#94A3B8") // Default tertiary color
+            val currentPath = MusicPlayerManager.currentSongPaths.getOrNull(MusicPlayerManager.currentPosition)
+            currentPath?.let { path ->
+                MusicPlayerManager.toggleLike(path)
             }
-            btnLike.setColorFilter(newColor)
         }
 
-        MusicPlayerManager.onSongChanged = {
-            updateUI()
-        }
-
-        MusicPlayerManager.onPlaybackStatusChanged = { isPlaying ->
-            btnPlay.setImageResource(if (isPlaying) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play)
-        }
+        MusicPlayerManager.addOnSongChangedListener(songChangedListener)
+        MusicPlayerManager.addOnPlaybackStatusChangedListener(playbackStatusListener)
+        MusicPlayerManager.addOnLikedSongsChangedListener(likedSongsChangeListener)
 
         seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
@@ -115,6 +121,8 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun updateUI() {
+        if (isFinishing || isDestroyed) return
+        
         tvSongName.text = MusicPlayerManager.getCurrentSongName()
         tvArtistName.text = MusicPlayerManager.getCurrentArtist() ?: "Unknown Artist"
         
@@ -130,11 +138,25 @@ class PlayerActivity : AppCompatActivity() {
             btnPlay.setImageResource(if (it.isPlaying) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play)
         }
         updateToggleColors()
+        updateLikeButtonUI()
+    }
+
+    private fun updateLikeButtonUI() {
+        val currentPath = MusicPlayerManager.currentSongPaths.getOrNull(MusicPlayerManager.currentPosition)
+        val isLiked = currentPath?.let { MusicPlayerManager.isLiked(it) } ?: false
+        
+        if (isLiked) {
+            btnLike.setColorFilter(androidx.core.content.ContextCompat.getColor(this, R.color.accent_primary))
+            btnLike.tag = "liked"
+        } else {
+            btnLike.setColorFilter(androidx.core.content.ContextCompat.getColor(this, R.color.text_secondary))
+            btnLike.tag = "unliked"
+        }
     }
 
     private fun updateToggleColors() {
-        val activeColor = android.graphics.Color.parseColor("#A855F7") // accent_highlight
-        val inactiveColor = android.graphics.Color.parseColor("#94A3B8") // text_tertiary
+        val activeColor = androidx.core.content.ContextCompat.getColor(this, R.color.accent_highlight)
+        val inactiveColor = androidx.core.content.ContextCompat.getColor(this, R.color.text_tertiary)
 
         btnShuffle.setColorFilter(if (MusicPlayerManager.isShuffle) activeColor else inactiveColor)
         btnRepeat.setColorFilter(if (MusicPlayerManager.isRepeat) activeColor else inactiveColor)
@@ -148,6 +170,9 @@ class PlayerActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        MusicPlayerManager.removeOnSongChangedListener(songChangedListener)
+        MusicPlayerManager.removeOnPlaybackStatusChangedListener(playbackStatusListener)
+        MusicPlayerManager.removeOnLikedSongsChangedListener(likedSongsChangeListener)
         handler.removeCallbacks(updateSeekBar)
     }
 }
