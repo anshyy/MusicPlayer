@@ -17,10 +17,9 @@ class SongAdapter(
 
     class SongViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val songName: TextView = view.findViewById(R.id.tvSongName)
-        val songNumber: TextView = view.findViewById(R.id.tvSongNumber)
         val artistName: TextView = view.findViewById(R.id.tvArtistName)
         val albumArt: ImageView = view.findViewById(R.id.ivSongArt)
-        val btnLike: View = view.findViewById(R.id.btnLike) // Now hidden but kept for logic
+        val btnLike: View = view.findViewById(R.id.btnLike)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SongViewHolder {
@@ -33,7 +32,6 @@ class SongAdapter(
         val song = songs[position]
         holder.songName.text = song.title
         holder.artistName.text = song.artist
-        holder.songNumber.text = String.format("%02d", position + 1)
         
         Glide.with(holder.itemView.context)
             .load(song.albumArtUri)
@@ -42,15 +40,20 @@ class SongAdapter(
             .into(holder.albumArt)
 
         val isLiked = likedSongPaths.contains(song.path)
-        // Color filter logic can be removed or moved to the 'More' button if desired
-        // For now, let's keep it simple as per the new UI design which uses a 'More' menu button instead of Like in the list
-
+        val likeButton = holder.btnLike as? ImageView
+        if (isLiked) {
+            likeButton?.setColorFilter(androidx.core.content.ContextCompat.getColor(holder.itemView.context, R.color.accent_primary))
+        } else {
+            likeButton?.setColorFilter(androidx.core.content.ContextCompat.getColor(holder.itemView.context, R.color.text_tertiary))
+        }
 
         holder.itemView.setOnClickListener { onClick(position) }
         
         holder.btnLike.setOnClickListener { 
             val newLiked = !isLiked
             onLikeClick(position, newLiked)
+            // No need to notifyItemChanged here if MainActivity's listener refreshes the whole adapter
+            // but for smooth local animation, we can update just this item
             notifyItemChanged(position)
         }
     }

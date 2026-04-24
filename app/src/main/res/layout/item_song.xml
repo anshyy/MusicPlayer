@@ -51,6 +51,17 @@
     </LinearLayout>
 
     <ImageButton
+        android:id="@+id/btnLike"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_toStartOf="@+id/btnMore"
+        android:layout_centerVertical="true"
+        android:layout_marginEnd="8dp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:src="@drawable/ic_heart"
+        app:tint="@color/text_tertiary" />
+
+    <ImageButton
         android:id="@+id/btnMore"
         android:layout_width="32dp"
         android:layout_height="32dp"
@@ -59,18 +70,5 @@
         android:background="?android:attr/selectableItemBackgroundBorderless"
         android:src="@android:drawable/ic_menu_more"
         app:tint="@color/text_tertiary" />
-
-    <TextView
-        android:id="@+id/tvSongNumber"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:visibility="gone" />
-
-    <!-- Hidden Like button for logic compatibility -->
-    <ImageButton
-        android:id="@+id/btnLike"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:visibility="gone" />
 
 </RelativeLayout>

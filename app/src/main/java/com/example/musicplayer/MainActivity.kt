@@ -275,6 +275,7 @@ class MainActivity : AppCompatActivity() {
                 MusicPlayerManager.toggleLike(path)
             })
             rvSearchResults.adapter = adapter
+            rvSearchResults.layoutManager = LinearLayoutManager(this)
         } else {
             rvSearchResults.adapter?.notifyDataSetChanged()
         }
