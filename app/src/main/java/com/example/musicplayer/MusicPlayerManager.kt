@@ -13,6 +13,8 @@ object MusicPlayerManager {
     private var loudnessEnhancer: LoudnessEnhancer? = null
     private val handler = Handler(Looper.getMainLooper())
     private var sleepTimerRunnable: Runnable? = null
+    private var crossfadeRunnable: Runnable? = null
+    private var isCrossfading = false
 
     var currentSongList: List<String> = emptyList()
     var currentSongPaths: List<String> = emptyList()
@@ -102,6 +104,7 @@ object MusicPlayerManager {
         mediaPlayer?.start()
         
         applyEffects()
+        startCrossfadeMonitor(context)
         
         if (isGapless) {
             prepareNextPlayer(context)
@@ -175,6 +178,7 @@ object MusicPlayerManager {
     }
 
     private fun applyEffects() {
+        mediaPlayer?.setVolume(1.0f, 1.0f) // Reset volume
         mediaPlayer?.let { player ->
             loudnessEnhancer?.release()
             if (isNormalization) {
@@ -207,6 +211,73 @@ object MusicPlayerManager {
         } else {
             sleepTimerRunnable = null
         }
+    }
+
+    private fun startCrossfadeMonitor(context: Context) {
+        crossfadeRunnable?.let { handler.removeCallbacks(it) }
+        isCrossfading = false
+
+        crossfadeRunnable = object : Runnable {
+            override fun run() {
+                mediaPlayer?.let { player ->
+                    if (player.isPlaying && crossfadeDuration > 0) {
+                        val remaining = player.duration - player.currentPosition
+                        if (remaining <= crossfadeDuration * 1000 && !isCrossfading) {
+                            isCrossfading = true
+                            triggerCrossfade(context)
+                        }
+                    }
+                }
+                handler.postDelayed(this, 500)
+            }
+        }
+        handler.post(crossfadeRunnable!!)
+    }
+
+    private fun triggerCrossfade(context: Context) {
+        val nextPos = getNextPosition()
+        if (nextPos == -1) return
+
+        val currentPlayer = mediaPlayer
+        val nextPlayer = createPlayer(context, nextPos) ?: return
+
+        this.currentPosition = nextPos
+        this.nextMediaPlayer = null // Clear gapless next player if any
+        
+        nextPlayer.setVolume(0f, 0f)
+        nextPlayer.start()
+        
+        // Fade out current, Fade in next
+        val fadeSteps = 20
+        val stepDelay = (crossfadeDuration * 1000L) / fadeSteps
+        
+        var currentStep = 0
+        val fadeHandler = Handler(Looper.getMainLooper())
+        
+        val fadeRunnable = object : Runnable {
+            override fun run() {
+                if (currentStep <= fadeSteps) {
+                    val volumeIn = currentStep.toFloat() / fadeSteps
+                    val volumeOut = 1.0f - volumeIn
+                    
+                    try {
+                        currentPlayer?.setVolume(volumeOut, volumeOut)
+                        nextPlayer.setVolume(volumeIn, volumeIn)
+                    } catch (e: Exception) {}
+                    
+                    currentStep++
+                    fadeHandler.postDelayed(this, stepDelay)
+                } else {
+                    currentPlayer?.stop()
+                    currentPlayer?.release()
+                    mediaPlayer = nextPlayer
+                    isCrossfading = false
+                    notifySongChanged(currentPosition)
+                    startCrossfadeMonitor(context)
+                }
+            }
+        }
+        fadeHandler.post(fadeRunnable)
     }
 
     fun playNext(context: Context) {

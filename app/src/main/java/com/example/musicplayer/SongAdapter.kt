@@ -37,6 +37,8 @@ class SongAdapter(
             .load(song.albumArtUri)
             .placeholder(R.drawable.gradient_card_pop)
             .error(R.drawable.gradient_card_pop)
+            .centerCrop()
+            .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.ALL)
             .into(holder.albumArt)
 
         val isLiked = likedSongPaths.contains(song.path)

@@ -45,6 +45,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvTitle: TextView
     private lateinit var authContainer: View
     private lateinit var profileContainer: View
+    private lateinit var tvSongCount: TextView
+    private lateinit var tvFriendsCount: TextView
 
     private var isLoggedIn = false
     private lateinit var sharedPreferences: android.content.SharedPreferences
@@ -116,6 +118,10 @@ class MainActivity : AppCompatActivity() {
         etSearchTabInput = findViewById(R.id.etSearchTabInput)
         authContainer = findViewById(R.id.authContainer)
         profileContainer = findViewById(R.id.profileContainer)
+
+        val headerView = navView.getHeaderView(0)
+        tvSongCount = headerView.findViewById(R.id.tvSongCount)
+        tvFriendsCount = headerView.findViewById(R.id.tvFriendsCount)
 
         sharedPreferences = getSharedPreferences("PlayOFFPrefs", MODE_PRIVATE)
         isLoggedIn = sharedPreferences.getBoolean("isLoggedIn", false)
@@ -340,6 +346,8 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
+        updateSidebarStats()
+
         val adapter = SongAdapter(songList, MusicPlayerManager.likedSongPaths, { position ->
             MusicPlayerManager.currentSongList = songList.map { it.title }
             MusicPlayerManager.currentSongPaths = songList.map { it.path }
@@ -356,6 +364,16 @@ class MainActivity : AppCompatActivity() {
         // Setup homepage with daily mixes and recently played
         setupHomepage()
         setupLibraryView()
+        updateSidebarStats()
+    }
+
+    private fun updateSidebarStats() {
+        if (::tvSongCount.isInitialized) {
+            tvSongCount.text = songList.size.toString()
+        }
+        if (::tvFriendsCount.isInitialized) {
+            tvFriendsCount.text = "12"
+        }
     }
 
     private fun setupLibraryView() {
