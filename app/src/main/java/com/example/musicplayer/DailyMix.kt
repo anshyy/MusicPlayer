@@ -8,7 +8,6 @@ data class DailyMix(
     val description: String,
     val imageUri: Uri? = null,
     val color: String,
-    val songs: List<String> = emptyList(),
-    val songPaths: List<String> = emptyList()
+    val songs: List<Song> = emptyList()
 )
 

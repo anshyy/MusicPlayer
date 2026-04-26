@@ -99,193 +99,101 @@ class MainActivity : AppCompatActivity() {
         navView.setNavigationItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
                 R.id.nav_home -> switchToHomeTab()
-                R.id.nav_friends -> Toast.makeText(this, "Friends clicked", Toast.LENGTH_SHORT).show()
-                R.id.nav_settings -> Toast.makeText(this, "Settings clicked", Toast.LENGTH_SHORT).show()
+                R.id.nav_library -> switchToLibraryTab()
             }
             drawerLayout.closeDrawer(GravityCompat.START)
             true
         }
 
-        // Setup category clicks
-        setupCategoryClicks()
-
-        miniPlayer.setOnClickListener {
-            val intent = Intent(this, PlayerActivity::class.java)
-            startActivity(intent)
-        }
-
-        btnMiniPlay.setOnClickListener {
-            MusicPlayerManager.togglePlayPause()
-        }
-
-        MusicPlayerManager.onPlaybackStatusChanged = { isPlaying ->
-            btnMiniPlay.setImageResource(if (isPlaying) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play)
-        }
-
-        MusicPlayerManager.onSongChanged = { _ ->
-            tvMiniSongName.text = MusicPlayerManager.getCurrentSongName()
-            miniPlayer.visibility = View.VISIBLE
-        }
-
-        bottomNav.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.nav_home -> {
-                    switchToHomeTab()
-                    true
-                }
-                R.id.nav_library -> {
-                    switchToLibraryTab()
-                    true
-                }
-                R.id.nav_search -> {
-                    switchToSearchTab()
-                    true
-                }
-                else -> false
+        bottomNav.setOnItemSelectedListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.nav_home -> switchToHomeTab()
+                R.id.nav_search -> switchToSearchTab()
+                R.id.nav_library -> switchToLibraryTab()
             }
+            true
         }
 
-        findViewById<ImageButton>(R.id.btnAddPlaylist).setOnClickListener {
-            val intent = Intent(this, PlaylistEditActivity::class.java)
-            createPlaylistLauncher.launch(intent)
-        }
-
-        // Setup search tab listener
-        setupSearchListener()
-
-        if (hasPermission()) {
-            loadSongs()
-        } else {
-            requestPermission()
-        }
+        checkPermission()
+        setupMiniPlayer()
+        setupSearch()
     }
 
-    private fun setupCategoryClicks() {
-        findViewById<View>(R.id.catHipHop).setOnClickListener {
-            openCategoryPlaylist("Hip Hop")
-        }
-        findViewById<View>(R.id.catPop).setOnClickListener {
-            openCategoryPlaylist("Pop Music")
-        }
-        findViewById<View>(R.id.catBlues).setOnClickListener {
-            openCategoryPlaylist("Blues")
-        }
-    }
-
-    private fun openCategoryPlaylist(category: String) {
-        val filteredSongs = ArrayList<String>()
-        val filteredPaths = ArrayList<String>()
-        
-        // Simulating category filtering - in a real app you'd have genre metadata
-        // For now, we'll just pick some random songs if the list is large enough
-        if (songList.isNotEmpty()) {
-            for (i in 0 until minOf(10, songList.size)) {
-                filteredSongs.add(songList[i].title)
-                filteredPaths.add(songList[i].path)
-            }
-        }
-
-        val intent = Intent(this, ListDetailActivity::class.java).apply {
-            putExtra("list_title", category)
-            putStringArrayListExtra("song_names", filteredSongs)
-            putStringArrayListExtra("song_paths", filteredPaths)
-        }
-        startActivity(intent)
-    }
-
-    private fun switchToHomeTab() {
-        homeView.visibility = View.VISIBLE
-        libraryView.visibility = View.GONE
-        searchView.visibility = View.GONE
-        tvTitle.text = "Home"
-        bottomNav.selectedItemId = R.id.nav_home
-    }
-
-    private fun switchToLibraryTab() {
-        homeView.visibility = View.GONE
-        libraryView.visibility = View.VISIBLE
-        searchView.visibility = View.GONE
-        tvTitle.text = "Library"
-        bottomNav.selectedItemId = R.id.nav_library
-        setupLibraryView()
-    }
-
-    private fun switchToSearchTab() {
-        homeView.visibility = View.GONE
-        libraryView.visibility = View.GONE
-        searchView.visibility = View.VISIBLE
-        tvTitle.text = "Search"
-        bottomNav.selectedItemId = R.id.nav_search
-        etSearchTabInput.requestFocus()
-    }
-
-    private fun setupSearchListener() {
+    private fun setupSearch() {
         etSearchTabInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                searchSongs(s.toString())
+                val query = s.toString().lowercase()
+                searchResultsList.clear()
+                if (query.isNotEmpty()) {
+                    searchResultsList.addAll(songList.filter { 
+                        it.title.lowercase().contains(query) || it.artist.lowercase().contains(query)
+                    })
+                }
+                updateSearchResults()
             }
             override fun afterTextChanged(s: android.text.Editable?) {}
         })
     }
 
-    private fun searchSongs(query: String) {
-        searchResultsList.clear()
-        
-        if (query.isEmpty()) {
-            rvSearchResults.adapter = null
-            return
-        }
-        
-        for (song in songList) {
-            if (song.title.lowercase().contains(query.lowercase()) || 
-                song.artist.lowercase().contains(query.lowercase())) {
-                searchResultsList.add(song)
-            }
-        }
-        
+    private fun updateSearchResults() {
         val adapter = SongAdapter(searchResultsList, likedSongPaths, { position ->
             val song = searchResultsList[position]
-            MusicPlayerManager.currentSongList = searchResultsList.map { it.title }
-            MusicPlayerManager.currentSongPaths = searchResultsList.map { it.path }
-            MusicPlayerManager.currentSongArtUris = searchResultsList.map { it.albumArtUri }
-            MusicPlayerManager.currentArtists = searchResultsList.map { it.artist }
-            MusicPlayerManager.playSong(this, position)
-            addToRecentlyPlayed(song)
-            val intent = Intent(this, PlayerActivity::class.java)
-            startActivity(intent)
+            val idx = songList.indexOfFirst { it.path == song.path }
+            if (idx != -1) {
+                MusicPlayerManager.currentSongList = songList.map { it.title }
+                MusicPlayerManager.currentSongPaths = songList.map { it.path }
+                MusicPlayerManager.currentSongArtUris = songList.map { it.albumArtUri }
+                MusicPlayerManager.currentArtists = songList.map { it.artist }
+                MusicPlayerManager.playSong(this, idx)
+                addToRecentlyPlayed(song)
+                startActivity(Intent(this, PlayerActivity::class.java))
+            }
         }, { position, isLiked ->
             val path = searchResultsList[position].path
             if (isLiked) likedSongPaths.add(path) else likedSongPaths.remove(path)
+            setupLibraryView()
         })
         rvSearchResults.adapter = adapter
     }
 
-    private fun hasPermission(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_AUDIO) ==
-                    PackageManager.PERMISSION_GRANTED
-        } else {
-            ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) ==
-                    PackageManager.PERMISSION_GRANTED
+    private fun setupMiniPlayer() {
+        miniPlayer.setOnClickListener {
+            if (MusicPlayerManager.currentPosition != -1) {
+                startActivity(Intent(this, PlayerActivity::class.java))
+            }
+        }
+        btnMiniPlay.setOnClickListener {
+            // Toggle play/pause - logic in MusicPlayerManager could be expanded
+        }
+        MusicPlayerManager.onSongChanged = { position ->
+            tvMiniSongName.text = MusicPlayerManager.currentSongList[position]
+            miniPlayer.visibility = View.VISIBLE
         }
     }
 
-    private fun requestPermission() {
+    private fun checkPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_MEDIA_AUDIO), permissionCode)
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_MEDIA_AUDIO), permissionCode)
+            } else {
+                loadSongs()
+            }
         } else {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), permissionCode)
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), permissionCode)
+            } else {
+                loadSongs()
+            }
         }
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == permissionCode && grantResults.isNotEmpty() &&
-            grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+        if (requestCode == permissionCode && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             loadSongs()
         } else {
-            Toast.makeText(this, "Permission denied!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Permission Denied", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -297,9 +205,9 @@ class MainActivity : AppCompatActivity() {
             MediaStore.Audio.Media.DATA,
             MediaStore.Audio.Media.ALBUM_ID
         )
-        val cursor = contentResolver.query(uri, projection, null, null, null)
-
-        cursor?.use {
+        val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0"
+        
+        contentResolver.query(uri, projection, selection, null, null)?.use {
             while (it.moveToNext()) {
                 val title = it.getString(it.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE))
                 val artist = it.getString(it.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST))
@@ -370,22 +278,78 @@ class MainActivity : AppCompatActivity() {
             val context = this
             val intent = Intent(context, ListDetailActivity::class.java).apply {
                 putExtra("list_title", playlist.name)
-                // Map the paths back to names
-                val names = ArrayList<String>()
-                val paths = ArrayList<String>()
+                // Map the paths back to Song objects
+                val songs = ArrayList<Song>()
                 for (path in playlist.songPaths) {
                     val song = songList.find { it.path == path }
                     if (song != null) {
-                        names.add(song.title)
-                        paths.add(path)
+                        songs.add(song)
                     }
                 }
-                putStringArrayListExtra("song_names", names)
-                putStringArrayListExtra("song_paths", paths)
+                putParcelableArrayListExtra("songs", songs)
             }
             startActivity(intent)
         })
         rvPlaylists.adapter = playlistAdapter
+        
+        findViewById<View>(R.id.btnAddPlaylist).setOnClickListener {
+            val intent = Intent(this, PlaylistEditActivity::class.java)
+            val allSongPaths = ArrayList(songList.map { it.path })
+            val allSongTitles = ArrayList(songList.map { it.title })
+            intent.putStringArrayListExtra("all_song_paths", allSongPaths)
+            intent.putStringArrayListExtra("all_song_titles", allSongTitles)
+            createPlaylistLauncher.launch(intent)
+        }
+
+        findViewById<View>(R.id.catHipHop).setOnClickListener {
+            openCategoryPlaylist("Hip Hop")
+        }
+        findViewById<View>(R.id.catPop).setOnClickListener {
+            openCategoryPlaylist("Pop")
+        }
+        findViewById<View>(R.id.catBlues).setOnClickListener {
+            openCategoryPlaylist("Blues")
+        }
+    }
+
+    private fun openCategoryPlaylist(category: String) {
+        val filteredSongs = ArrayList<Song>()
+        
+        // Simulating category filtering - in a real app you'd have genre metadata
+        // For now, we'll just pick some random songs if the list is large enough
+        if (songList.isNotEmpty()) {
+            for (i in 0 until minOf(10, songList.size)) {
+                filteredSongs.add(songList[i])
+            }
+        }
+
+        val intent = Intent(this, ListDetailActivity::class.java).apply {
+            putExtra("list_title", category)
+            putParcelableArrayListExtra("songs", filteredSongs)
+        }
+        startActivity(intent)
+    }
+
+    private fun switchToHomeTab() {
+        homeView.visibility = View.VISIBLE
+        libraryView.visibility = View.GONE
+        searchView.visibility = View.GONE
+        tvTitle.text = "Home"
+    }
+
+    private fun switchToSearchTab() {
+        homeView.visibility = View.GONE
+        libraryView.visibility = View.GONE
+        searchView.visibility = View.VISIBLE
+        tvTitle.text = "Search"
+    }
+
+    private fun switchToLibraryTab() {
+        homeView.visibility = View.GONE
+        libraryView.visibility = View.VISIBLE
+        searchView.visibility = View.GONE
+        tvTitle.text = "Your Library"
+        setupLibraryView()
     }
 
     private fun generateDailyMixes() {
@@ -416,23 +380,20 @@ class MainActivity : AppCompatActivity() {
         for (i in mixTitles.indices) {
             val songsPerMix = minOf(15, songList.size)
             val startIndex = (i * songsPerMix) % songList.size
-            val mixSongs = ArrayList<String>()
-            val mixPaths = ArrayList<String>()
+            val mixSongs = ArrayList<Song>()
 
             for (j in 0 until songsPerMix) {
                 val idx = (startIndex + j) % songList.size
                 mixSongs.add(songList[idx])
-                mixPaths.add(songPaths[idx])
             }
 
             dailyMixes.add(DailyMix(
                 id = "mix_${i}",
                 title = mixTitles[i],
                 description = mixDescriptions[i],
-                imageUri = if (mixPaths.isNotEmpty()) songList.find { it.path == mixPaths[0] }?.albumArtUri else null,
+                imageUri = if (mixSongs.isNotEmpty()) mixSongs[0].albumArtUri else null,
                 color = colors[i % colors.size],
-                songs = mixSongs,
-                songPaths = mixPaths
+                songs = mixSongs
             ))
         }
     }
@@ -447,17 +408,14 @@ class MainActivity : AppCompatActivity() {
 
         // Setup Daily Mixes RecyclerView
         val dailyMixAdapter = DailyMixAdapter(dailyMixes) { mix ->
-            MusicPlayerManager.currentSongList = mix.songs
-            MusicPlayerManager.currentSongPaths = mix.songPaths
-            MusicPlayerManager.currentSongArtUris = mix.songPaths.map { path ->
-                songList.find { it.path == path }?.albumArtUri
-            }
-            MusicPlayerManager.currentArtists = mix.songPaths.map { path ->
-                songList.find { it.path == path }?.artist ?: "Unknown"
-            }
-            if (mix.songPaths.isNotEmpty()) {
+            MusicPlayerManager.currentSongList = mix.songs.map { it.title }
+            MusicPlayerManager.currentSongPaths = mix.songs.map { it.path }
+            MusicPlayerManager.currentSongArtUris = mix.songs.map { it.albumArtUri }
+            MusicPlayerManager.currentArtists = mix.songs.map { it.artist }
+            
+            if (mix.songs.isNotEmpty()) {
                 MusicPlayerManager.playSong(this, 0)
-                addToRecentlyPlayed(songList.find { it.path == mix.songPaths[0] } ?: Song(mix.songs[0], "Unknown", mix.songPaths[0], 0))
+                addToRecentlyPlayed(mix.songs[0])
                 startActivity(Intent(this, PlayerActivity::class.java))
             }
         }

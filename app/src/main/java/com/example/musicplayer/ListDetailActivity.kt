@@ -15,17 +15,16 @@ class ListDetailActivity : AppCompatActivity() {
         setContentView(R.layout.activity_list_detail)
 
         val title = intent.getStringExtra("list_title") ?: "Music List"
-        val songNames = intent.getStringArrayListExtra("song_names") ?: arrayListOf()
-        val songPaths = intent.getStringArrayListExtra("song_paths") ?: arrayListOf()
+        val songs = intent.getParcelableArrayListExtra<Song>("songs") ?: arrayListOf()
 
         findViewById<TextView>(R.id.tvListTitle).text = title
         
         val rvSongs = findViewById<RecyclerView>(R.id.rvListSongs)
         rvSongs.layoutManager = LinearLayoutManager(this)
         
-        val adapter = SongAdapter(songNames, songPaths, HashSet<String>(), { position ->
-            MusicPlayerManager.currentSongList = songNames
-            MusicPlayerManager.currentSongPaths = songPaths
+        val adapter = SongAdapter(songs, HashSet<String>(), { position ->
+            MusicPlayerManager.currentSongList = songs.map { it.title }
+            MusicPlayerManager.currentSongPaths = songs.map { it.path }
             MusicPlayerManager.playSong(this, position)
             startActivity(Intent(this, PlayerActivity::class.java))
         }, { _, _ -> 
@@ -38,9 +37,9 @@ class ListDetailActivity : AppCompatActivity() {
         }
 
         findViewById<androidx.cardview.widget.CardView>(R.id.btnPlayAll).setOnClickListener {
-            if (songPaths.isNotEmpty()) {
-                MusicPlayerManager.currentSongList = songNames
-                MusicPlayerManager.currentSongPaths = songPaths
+            if (songs.isNotEmpty()) {
+                MusicPlayerManager.currentSongList = songs.map { it.title }
+                MusicPlayerManager.currentSongPaths = songs.map { it.path }
                 MusicPlayerManager.playSong(this, 0)
                 startActivity(Intent(this, PlayerActivity::class.java))
             }

@@ -18,7 +18,7 @@ class DailyMixAdapter(
     private val onClick: (DailyMix) -> Unit
 ) : RecyclerView.Adapter<DailyMixAdapter.DailyMixViewHolder>() {
 
-    class DailyMixViewHolder(val itemView: CardView, val titleText: TextView, val descText: TextView, val imageView: ImageView) : RecyclerView.ViewHolder(itemView)
+    class DailyMixViewHolder(val cardView: CardView, val titleText: TextView, val descText: TextView, val imageView: ImageView) : RecyclerView.ViewHolder(cardView)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): DailyMixViewHolder {
         val context = parent.context
@@ -84,27 +84,26 @@ class DailyMixAdapter(
         holder.descText.text = mix.description
 
         if (mix.imageUri != null) {
-            Glide.with(holder.itemView.context)
+            Glide.with(holder.cardView.context)
                 .load(mix.imageUri)
                 .into(holder.imageView)
-            holder.itemView.setCardBackgroundColor(Color.BLACK)
+            holder.cardView.setCardBackgroundColor(Color.BLACK)
         } else {
             // Use colors from palette for horizontal items if no image
             val colors = listOf("#2D60FF", "#7000FF", "#00D1FF", "#FF2D55")
             try {
-                holder.itemView.setCardBackgroundColor(Color.parseColor(colors[position % colors.size]))
+                holder.cardView.setCardBackgroundColor(Color.parseColor(colors[position % colors.size]))
             } catch (e: Exception) {
-                holder.itemView.setCardBackgroundColor(holder.itemView.context.getColor(R.color.accent_primary))
+                holder.cardView.setCardBackgroundColor(holder.cardView.context.getColor(R.color.accent_primary))
             }
             holder.imageView.setImageDrawable(null)
         }
 
-        holder.itemView.setOnClickListener { 
-            val context = holder.itemView.context
+        holder.cardView.setOnClickListener { 
+            val context = holder.cardView.context
             val intent = Intent(context, ListDetailActivity::class.java).apply {
                 putExtra("list_title", mix.title)
-                putStringArrayListExtra("song_names", ArrayList(mix.songs))
-                putStringArrayListExtra("song_paths", ArrayList(mix.songPaths))
+                putParcelableArrayListExtra("songs", ArrayList(mix.songs))
             }
             context.startActivity(intent)
         }

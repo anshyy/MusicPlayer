@@ -1,11 +1,15 @@
 package com.example.musicplayer
 
 import android.net.Uri
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
 
+@Parcelize
 data class Song(
     val title: String,
     val artist: String,
     val path: String,
     val albumId: Long,
     val albumArtUri: Uri? = null
-)
+) : Parcelable
+
