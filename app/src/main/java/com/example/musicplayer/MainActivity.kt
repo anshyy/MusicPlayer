@@ -372,7 +372,7 @@ class MainActivity : AppCompatActivity() {
             tvSongCount.text = songList.size.toString()
         }
         if (::tvFriendsCount.isInitialized) {
-            tvFriendsCount.text = "12"
+            tvFriendsCount.text = "0"
         }
     }
 

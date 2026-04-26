@@ -13,6 +13,7 @@
 
         <!-- Background Colors -->
         <item name="android:colorBackground">@color/primary_background</item>
+        <item name="android:windowBackground">@color/primary_background</item>
         <item name="colorSurface">@color/card_background</item>
         <item name="colorOnSurface">@color/text_primary</item>
 
@@ -32,6 +33,16 @@
         <!-- Status Bar -->
         <item name="android:statusBarColor">@color/primary_background</item>
         <item name="android:windowLightStatusBar" tools:targetApi="m">false</item>
+
+        <!-- Activity Animations -->
+        <item name="android:windowAnimationStyle">@style/ActivityAnimation</item>
+    </style>
+
+    <style name="ActivityAnimation" parent="@android:style/Animation.Activity">
+        <item name="android:activityOpenEnterAnimation">@anim/slide_in_right</item>
+        <item name="android:activityOpenExitAnimation">@anim/slide_out_left</item>
+        <item name="android:activityCloseEnterAnimation">@anim/slide_in_left</item>
+        <item name="android:activityCloseExitAnimation">@anim/slide_out_right</item>
     </style>
 
     <!-- Custom Text Styles with San Francisco Font -->
@@ -97,4 +108,15 @@
     </style>
 
     <style name="Theme.PlayOFF" parent="Base.Theme.PlayOFF" />
+
+    <style name="Theme.PlayOFF.Player" parent="Base.Theme.PlayOFF">
+        <item name="android:windowAnimationStyle">@style/PlayerAnimation</item>
+    </style>
+
+    <style name="PlayerAnimation" parent="@android:style/Animation.Activity">
+        <item name="android:activityOpenEnterAnimation">@anim/slide_in_up</item>
+        <item name="android:activityOpenExitAnimation">@android:anim/fade_out</item>
+        <item name="android:activityCloseEnterAnimation">@android:anim/fade_in</item>
+        <item name="android:activityCloseExitAnimation">@anim/slide_out_down</item>
+    </style>
 </resources>

@@ -1,14 +1,14 @@
 package com.example.musicplayer
 
-import android.content.Intent
 import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
-import java.util.ArrayList
+import com.bumptech.glide.Glide
 
 class DailyMixAdapter(
     private val dailyMixes: List<DailyMix>,
@@ -20,6 +20,7 @@ class DailyMixAdapter(
         val titleView: TextView = view.findViewById(R.id.tvDailyMixTitle)
         val subtitleView: TextView = view.findViewById(R.id.tvDailyMixDesc)
         val songCountView: TextView = view.findViewById(R.id.tvSongCount)
+        val imageView: ImageView = view.findViewById(R.id.ivDailyMixArt)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): DailyMixViewHolder {
@@ -40,8 +41,21 @@ class DailyMixAdapter(
             holder.cardView.setCardBackgroundColor(Color.parseColor("#FA243C"))
         }
 
+        if (mix.imageUri != null) {
+            Glide.with(holder.itemView.context)
+                .load(mix.imageUri)
+                .centerCrop()
+                .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.ALL)
+                .into(holder.imageView)
+        } else {
+            holder.imageView.setImageResource(R.drawable.gradient_card_pop)
+        }
+
         holder.itemView.setOnClickListener { 
-            onClick(mix)
+            it.animate().scaleX(0.95f).scaleY(0.95f).setDuration(100).withEndAction {
+                it.animate().scaleX(1.0f).scaleY(1.0f).setDuration(100).start()
+                onClick(mix)
+            }.start()
         }
     }
 

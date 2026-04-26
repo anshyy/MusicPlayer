@@ -49,7 +49,12 @@ class SongAdapter(
             likeButton?.setColorFilter(androidx.core.content.ContextCompat.getColor(holder.itemView.context, R.color.text_tertiary))
         }
 
-        holder.itemView.setOnClickListener { onClick(position) }
+        holder.itemView.setOnClickListener { 
+            it.animate().scaleX(0.95f).scaleY(0.95f).setDuration(100).withEndAction {
+                it.animate().scaleX(1.0f).scaleY(1.0f).setDuration(100).start()
+                onClick(position)
+            }.start()
+        }
         
         holder.btnLike.setOnClickListener { 
             val newLiked = !isLiked

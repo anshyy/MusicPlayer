@@ -12,7 +12,9 @@
         android:label="@string/app_name"
         android:icon="@drawable/ic_play_logo"
         android:roundIcon="@drawable/ic_play_logo"
-        android:theme="@style/Theme.PlayOFF">
+        android:theme="@style/Theme.PlayOFF"
+        android:hardwareAccelerated="true"
+        android:largeHeap="true">
 
         <activity android:name=".MainActivity"
             android:exported="true">
@@ -22,7 +24,8 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".PlayerActivity"/>
+        <activity android:name=".PlayerActivity"
+            android:theme="@style/Theme.PlayOFF.Player"/>
         <activity android:name=".PlaylistEditActivity"/>
         <activity android:name=".ListDetailActivity"/>
         <activity android:name=".LoginActivity"/>

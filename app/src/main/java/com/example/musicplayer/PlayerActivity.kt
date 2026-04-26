@@ -126,11 +126,25 @@ class PlayerActivity : AppCompatActivity() {
         tvSongName.text = MusicPlayerManager.getCurrentSongName()
         tvArtistName.text = MusicPlayerManager.getCurrentArtist() ?: "Unknown Artist"
         
+        val songArtUri = MusicPlayerManager.getCurrentSongArtUri()
+
+        // Load Album Art
         Glide.with(this)
-            .load(MusicPlayerManager.getCurrentSongArtUri())
+            .load(songArtUri)
             .placeholder(R.drawable.gradient_card_pop)
             .error(R.drawable.gradient_card_pop)
+            .centerCrop()
             .into(ivAlbumArt)
+
+        // Load Blurred Background (Low-res stretched for blur effect)
+        findViewById<ImageView>(R.id.ivBlurredBg)?.let { bg ->
+            Glide.with(this)
+                .load(songArtUri)
+                .placeholder(R.drawable.gradient_card_pop)
+                .override(40, 40) // Very low res for blur effect
+                .centerCrop()
+                .into(bg)
+        }
 
         MusicPlayerManager.getMediaPlayer()?.let {
             seekBar.max = it.duration

@@ -34,9 +34,16 @@ class RecentlyPlayedAdapter(
             .load(song.albumArtUri)
             .placeholder(R.drawable.gradient_card_pop)
             .error(R.drawable.gradient_card_pop)
+            .centerCrop()
+            .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.ALL)
             .into(holder.albumArt)
 
-        holder.itemView.setOnClickListener { onClick(position) }
+        holder.itemView.setOnClickListener { 
+            it.animate().scaleX(0.95f).scaleY(0.95f).setDuration(100).withEndAction {
+                it.animate().scaleX(1.0f).scaleY(1.0f).setDuration(100).start()
+                onClick(position)
+            }.start()
+        }
     }
 
     override fun getItemCount() = recentSongs.size

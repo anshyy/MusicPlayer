@@ -247,37 +247,32 @@ object MusicPlayerManager {
         nextPlayer.setVolume(0f, 0f)
         nextPlayer.start()
         
-        // Fade out current, Fade in next
-        val fadeSteps = 20
-        val stepDelay = (crossfadeDuration * 1000L) / fadeSteps
+        // Use ValueAnimator for smooth volume transition
+        val animator = android.animation.ValueAnimator.ofFloat(0f, 1.0f)
+        animator.duration = (crossfadeDuration * 1000L)
+        animator.addUpdateListener { animation ->
+            val volumeIn = animation.animatedValue as Float
+            val volumeOut = 1.0f - volumeIn
+            try {
+                currentPlayer?.setVolume(volumeOut, volumeOut)
+                nextPlayer.setVolume(volumeIn, volumeIn)
+            } catch (e: Exception) {}
+        }
         
-        var currentStep = 0
-        val fadeHandler = Handler(Looper.getMainLooper())
-        
-        val fadeRunnable = object : Runnable {
-            override fun run() {
-                if (currentStep <= fadeSteps) {
-                    val volumeIn = currentStep.toFloat() / fadeSteps
-                    val volumeOut = 1.0f - volumeIn
-                    
-                    try {
-                        currentPlayer?.setVolume(volumeOut, volumeOut)
-                        nextPlayer.setVolume(volumeIn, volumeIn)
-                    } catch (e: Exception) {}
-                    
-                    currentStep++
-                    fadeHandler.postDelayed(this, stepDelay)
-                } else {
+        animator.addListener(object : android.animation.AnimatorListenerAdapter() {
+            override fun onAnimationEnd(animation: android.animation.Animator) {
+                try {
                     currentPlayer?.stop()
                     currentPlayer?.release()
-                    mediaPlayer = nextPlayer
-                    isCrossfading = false
-                    notifySongChanged(currentPosition)
-                    startCrossfadeMonitor(context)
-                }
+                } catch (e: Exception) {}
+                
+                mediaPlayer = nextPlayer
+                isCrossfading = false
+                notifySongChanged(currentPosition)
+                startCrossfadeMonitor(context)
             }
-        }
-        fadeHandler.post(fadeRunnable)
+        })
+        animator.start()
     }
 
     fun playNext(context: Context) {

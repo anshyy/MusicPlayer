@@ -7,6 +7,19 @@
     android:background="@color/primary_background"
     android:fitsSystemWindows="true">
 
+    <!-- Blurred Background -->
+    <ImageView
+        android:id="@+id/ivBlurredBg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="centerCrop"
+        android:alpha="0.6" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#99000000" />
+
     <!-- Top Handle for Modal feel -->
     <View
         android:id="@+id/topHandle"
@@ -27,7 +40,7 @@
         android:layout_marginHorizontal="32dp"
         android:layout_marginTop="40dp"
         android:layout_marginBottom="40dp"
-        app:cardCornerRadius="12dp"
+        app:cardCornerRadius="24dp"
         app:cardElevation="20dp">
 
         <ImageView
