@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">MusicPlayer</string>
+    <string name="app_name">PlayOFF</string>
     <string name="song_position">%1$d / %2$d</string>
     <string name="liked_songs">Liked Songs</string>
     <string name="playlists">Playlists</string>

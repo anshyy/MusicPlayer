@@ -22,5 +22,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "MusicPlayer"
+rootProject.name = "PlayOFF"
 include(":app")

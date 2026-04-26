@@ -117,7 +117,7 @@ class MainActivity : AppCompatActivity() {
         authContainer = findViewById(R.id.authContainer)
         profileContainer = findViewById(R.id.profileContainer)
 
-        sharedPreferences = getSharedPreferences("MusicPlayerPrefs", MODE_PRIVATE)
+        sharedPreferences = getSharedPreferences("PlayOFFPrefs", MODE_PRIVATE)
         isLoggedIn = sharedPreferences.getBoolean("isLoggedIn", false)
         val savedLikes = sharedPreferences.getStringSet("likedSongs", emptySet())
         if (savedLikes != null) {

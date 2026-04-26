@@ -97,7 +97,7 @@ class LoginActivity : AppCompatActivity() {
             Toast.makeText(this, "Welcome back, $username! 🎵", Toast.LENGTH_LONG).show()
 
             // Save login state
-            getSharedPreferences("MusicPlayerPrefs", MODE_PRIVATE).edit()
+            getSharedPreferences("PlayOFFPrefs", MODE_PRIVATE).edit()
                 .putBoolean("isLoggedIn", true)
                 .apply()
 
