@@ -33,10 +33,12 @@ class SongAdapter(
         holder.songName.text = song.title
         holder.artistName.text = song.artist
         
+        val fallbackImage = VisualUtils.getPremiumImageForSeed(song.title + song.path)
+
         Glide.with(holder.itemView.context)
             .load(song.albumArtUri)
             .placeholder(R.drawable.gradient_card_pop)
-            .error(R.drawable.gradient_card_pop)
+            .error(fallbackImage)
             .centerCrop()
             .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.ALL)
             .into(holder.albumArt)

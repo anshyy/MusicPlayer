@@ -129,7 +129,7 @@ object MusicPlayerManager {
                 }
                 setDataSource(context, uri)
                 prepare()
-                isLooping = isRepeat && !isGapless
+                isLooping = false // We handle looping manually in onCompletion for playlist repeat
                 setOnCompletionListener {
                     if (isGapless && nextMediaPlayer != null) {
                         // Transition to next player
@@ -170,11 +170,14 @@ object MusicPlayerManager {
 
     private fun getNextPosition(): Int {
         if (currentSongPaths.isEmpty()) return -1
-        return if (isShuffle) {
-            (currentSongPaths.indices).random()
-        } else {
-            (currentPosition + 1) % currentSongPaths.size
+        if (isShuffle) {
+            return (currentSongPaths.indices).random()
         }
+        val nextPos = currentPosition + 1
+        if (nextPos >= currentSongPaths.size) {
+            return if (isRepeat) 0 else -1
+        }
+        return nextPos
     }
 
     private fun applyEffects() {
@@ -277,7 +280,13 @@ object MusicPlayerManager {
 
     fun playNext(context: Context) {
         val nextPos = getNextPosition()
-        if (nextPos != -1) playSong(context, nextPos)
+        if (nextPos != -1) {
+            playSong(context, nextPos)
+        } else {
+            // Stop playing at the end of playlist if repeat is off
+            mediaPlayer?.stop()
+            notifyPlaybackStatusChanged(false)
+        }
     }
 
     fun playPrevious(context: Context) {

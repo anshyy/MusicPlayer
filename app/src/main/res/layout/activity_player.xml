@@ -154,32 +154,52 @@
         android:orientation="horizontal">
 
         <ImageButton
+            android:id="@+id/btnShuffle"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_shuffle"
+            app:tint="@color/text_tertiary" />
+
+        <ImageButton
             android:id="@+id/btnPrev"
             android:layout_width="48dp"
             android:layout_height="48dp"
+            android:layout_marginStart="24dp"
             android:background="?android:attr/selectableItemBackgroundBorderless"
             android:scaleType="fitCenter"
-            android:src="@android:drawable/ic_media_previous"
+            android:src="@drawable/ic_skip_previous"
             app:tint="@color/text_primary" />
 
         <ImageButton
             android:id="@+id/btnPlay"
             android:layout_width="72dp"
             android:layout_height="72dp"
-            android:layout_marginHorizontal="40dp"
+            android:layout_marginHorizontal="24dp"
             android:background="?android:attr/selectableItemBackgroundBorderless"
             android:scaleType="fitCenter"
-            android:src="@android:drawable/ic_media_play"
+            android:src="@drawable/ic_play_arrow"
             app:tint="@color/text_primary" />
 
         <ImageButton
             android:id="@+id/btnNext"
             android:layout_width="48dp"
             android:layout_height="48dp"
+            android:layout_marginEnd="24dp"
             android:background="?android:attr/selectableItemBackgroundBorderless"
             android:scaleType="fitCenter"
-            android:src="@android:drawable/ic_media_next"
+            android:src="@drawable/ic_skip_next"
             app:tint="@color/text_primary" />
+
+        <ImageButton
+            android:id="@+id/btnRepeat"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_repeat"
+            app:tint="@color/text_tertiary" />
     </LinearLayout>
 
     <!-- Bottom Secondary Controls -->
@@ -199,17 +219,13 @@
             android:layout_height="24dp"
             android:layout_weight="1"
             android:background="?android:attr/selectableItemBackgroundBorderless"
-            android:src="@android:drawable/ic_menu_sort_by_size"
+            android:src="@drawable/ic_lyrics"
             app:tint="@color/text_secondary" />
 
-        <ImageButton
-            android:id="@+id/btnAirplay"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:layout_weight="1"
-            android:background="?android:attr/selectableItemBackgroundBorderless"
-            android:src="@android:drawable/ic_menu_share"
-            app:tint="@color/text_secondary" />
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
 
         <ImageButton
             android:id="@+id/btnQueue"
@@ -217,12 +233,10 @@
             android:layout_height="24dp"
             android:layout_weight="1"
             android:background="?android:attr/selectableItemBackgroundBorderless"
-            android:src="@android:drawable/ic_menu_agenda"
+            android:src="@drawable/ic_queue_music"
             app:tint="@color/text_secondary" />
     </LinearLayout>
 
-    <!-- Hidden Shuffle/Repeat buttons for logic but accessible via more menu or gesture if needed -->
-    <ImageButton android:id="@+id/btnShuffle" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
-    <ImageButton android:id="@+id/btnRepeat" android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone" />
+    <!-- Hidden buttons for logic removed as they are now in llControls -->
 
 </RelativeLayout>

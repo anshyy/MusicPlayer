@@ -22,7 +22,7 @@
         android:layout_marginStart="16dp"
         android:layout_marginTop="40dp"
         android:background="?android:attr/selectableItemBackgroundBorderless"
-        android:src="@android:drawable/ic_menu_revert"
+        android:src="@drawable/ic_arrow_back"
         app:tint="@color/text_primary" />
 
     <!-- Main Content -->

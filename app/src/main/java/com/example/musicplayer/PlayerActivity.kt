@@ -33,8 +33,7 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private val playbackStatusListener: (Boolean) -> Unit = { isPlaying ->
-        btnPlay.setImageResource(if (isPlaying) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play)
-        updateUI() // To handle potential background color updates or scaling if needed later
+        btnPlay.setImageResource(if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play_arrow)
     }
 
     private val updateSeekBar = object : Runnable {
@@ -91,7 +90,6 @@ class PlayerActivity : AppCompatActivity() {
 
         btnRepeat.setOnClickListener {
             MusicPlayerManager.isRepeat = !MusicPlayerManager.isRepeat
-            MusicPlayerManager.getMediaPlayer()?.isLooping = MusicPlayerManager.isRepeat
             updateToggleColors()
         }
 
@@ -127,19 +125,21 @@ class PlayerActivity : AppCompatActivity() {
         tvArtistName.text = MusicPlayerManager.getCurrentArtist() ?: "Unknown Artist"
         
         val songArtUri = MusicPlayerManager.getCurrentSongArtUri()
+        val songName = MusicPlayerManager.getCurrentSongName() ?: ""
+        val fallbackImage = VisualUtils.getPremiumImageForSeed(songName)
 
         // Load Album Art
         Glide.with(this)
             .load(songArtUri)
             .placeholder(R.drawable.gradient_card_pop)
-            .error(R.drawable.gradient_card_pop)
+            .error(fallbackImage)
             .centerCrop()
             .into(ivAlbumArt)
 
         // Load Blurred Background (Low-res stretched for blur effect)
         findViewById<ImageView>(R.id.ivBlurredBg)?.let { bg ->
             Glide.with(this)
-                .load(songArtUri)
+                .load(songArtUri ?: fallbackImage)
                 .placeholder(R.drawable.gradient_card_pop)
                 .override(40, 40) // Very low res for blur effect
                 .centerCrop()
@@ -149,7 +149,7 @@ class PlayerActivity : AppCompatActivity() {
         MusicPlayerManager.getMediaPlayer()?.let {
             seekBar.max = it.duration
             tvTotalTime.text = formatTime(it.duration)
-            btnPlay.setImageResource(if (it.isPlaying) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play)
+            btnPlay.setImageResource(if (it.isPlaying) R.drawable.ic_pause else R.drawable.ic_play_arrow)
         }
         updateToggleColors()
         updateLikeButtonUI()

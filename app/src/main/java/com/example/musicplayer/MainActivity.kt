@@ -71,14 +71,22 @@ class MainActivity : AppCompatActivity() {
     private val songChangedListener: (Int) -> Unit = { _ ->
         tvMiniSongName.text = MusicPlayerManager.getCurrentSongName()
         val uri = MusicPlayerManager.getCurrentSongArtUri()
-        if (uri != null && !isFinishing && !isDestroyed) {
-            Glide.with(this).load(uri).into(findViewById<ImageView>(R.id.ivMiniArt))
+        val songName = MusicPlayerManager.getCurrentSongName() ?: ""
+        val fallbackImage = VisualUtils.getPremiumImageForSeed(songName)
+
+        if (!isFinishing && !isDestroyed) {
+            Glide.with(this)
+                .load(uri)
+                .placeholder(R.drawable.gradient_card_pop)
+                .error(fallbackImage)
+                .centerCrop()
+                .into(findViewById<ImageView>(R.id.ivMiniArt))
         }
         miniPlayer.visibility = View.VISIBLE
     }
 
     private val playbackStatusListener: (Boolean) -> Unit = { isPlaying ->
-        btnMiniPlay.setImageResource(if (isPlaying) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play)
+        btnMiniPlay.setImageResource(if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play_arrow)
     }
 
     private val likedSongsChangeListener: () -> Unit = {
@@ -178,6 +186,16 @@ class MainActivity : AppCompatActivity() {
         // Setup search tab listener
         setupSearchListener()
 
+        // Create Playlist from Home
+        findViewById<View>(R.id.btnCreatePlaylistHome).setOnClickListener {
+            val intent = Intent(this, PlaylistEditActivity::class.java)
+            val allSongPaths = ArrayList(songList.map { it.path })
+            val allSongTitles = ArrayList(songList.map { it.title })
+            intent.putStringArrayListExtra("all_song_paths", allSongPaths)
+            intent.putStringArrayListExtra("all_song_titles", allSongTitles)
+            createPlaylistLauncher.launch(intent)
+        }
+
         // Load background image
         Glide.with(this)
             .load("https://w0.peakpx.com/wallpaper/559/385/HD-wallpaper-monkey-d-luffy-one-piece-anime.jpg")
@@ -276,6 +294,7 @@ class MainActivity : AppCompatActivity() {
                 MusicPlayerManager.currentArtists = searchResultsList.map { it.artist }
                 MusicPlayerManager.playSong(this, position)
                 addToRecentlyPlayed(song)
+                startActivity(Intent(this, PlayerActivity::class.java))
             }, { position, _ ->
                 val path = searchResultsList[position].path
                 MusicPlayerManager.toggleLike(path)
@@ -355,6 +374,7 @@ class MainActivity : AppCompatActivity() {
             MusicPlayerManager.currentArtists = songList.map { it.artist }
             MusicPlayerManager.playSong(this, position)
             addToRecentlyPlayed(songList[position])
+            startActivity(Intent(this, PlayerActivity::class.java))
         }, { position, _ ->
             val path = songList[position].path
             MusicPlayerManager.toggleLike(path)
@@ -394,6 +414,7 @@ class MainActivity : AppCompatActivity() {
             MusicPlayerManager.currentArtists = likedSongs.map { it.artist }
             MusicPlayerManager.playSong(this, position)
             addToRecentlyPlayed(song)
+            startActivity(Intent(this, PlayerActivity::class.java))
         }, { position, _ ->
             val path = likedSongs[position].path
             MusicPlayerManager.toggleLike(path)
@@ -489,18 +510,15 @@ class MainActivity : AppCompatActivity() {
 
         // Setup Daily Mixes RecyclerView
         val dailyMixAdapter = DailyMixAdapter(dailyMixes) { mix ->
-            MusicPlayerManager.currentSongList = mix.songs
-            MusicPlayerManager.currentSongPaths = mix.songPaths
-            MusicPlayerManager.currentSongArtUris = mix.songPaths.map { path ->
-                songList.find { it.path == path }?.albumArtUri
+            val intent = Intent(this, ListDetailActivity::class.java).apply {
+                putExtra("list_title", mix.title)
+                putExtra("list_subtitle", mix.description)
+                putExtra("list_image", mix.imageUri?.toString())
+                putExtra("list_color", mix.color)
+                putStringArrayListExtra("song_names", ArrayList(mix.songs))
+                putStringArrayListExtra("song_paths", ArrayList(mix.songPaths))
             }
-            MusicPlayerManager.currentArtists = mix.songPaths.map { path ->
-                songList.find { it.path == path }?.artist ?: "Unknown"
-            }
-            if (mix.songPaths.isNotEmpty()) {
-                MusicPlayerManager.playSong(this, 0)
-                addToRecentlyPlayed(songList.find { it.path == mix.songPaths[0] } ?: Song(mix.songs[0], "Unknown", mix.songPaths[0], 0))
-            }
+            startActivity(intent)
         }
         rvDailyMixes.adapter = dailyMixAdapter
 

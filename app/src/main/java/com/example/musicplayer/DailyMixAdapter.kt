@@ -48,7 +48,11 @@ class DailyMixAdapter(
                 .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.ALL)
                 .into(holder.imageView)
         } else {
-            holder.imageView.setImageResource(R.drawable.gradient_card_pop)
+            val fallback = VisualUtils.getPremiumImageForSeed(mix.title)
+            Glide.with(holder.itemView.context)
+                .load(fallback)
+                .centerCrop()
+                .into(holder.imageView)
         }
 
         holder.itemView.setOnClickListener { 

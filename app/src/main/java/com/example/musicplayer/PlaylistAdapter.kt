@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import java.util.ArrayList
 
 class PlaylistAdapter(
@@ -31,11 +32,16 @@ class PlaylistAdapter(
         holder.tvName.text = playlist.name
         val songCount = playlist.songPaths.size
         holder.tvSub.text = "$songCount ${if (songCount == 1) "song" else "songs"}"
-        if (playlist.imageUri != null) {
-            holder.ivPlaylist.setImageURI(playlist.imageUri)
-        } else {
-            holder.ivPlaylist.setImageResource(android.R.drawable.ic_menu_gallery)
-        }
+        
+        val fallbackImage = VisualUtils.getPremiumImageForSeed(playlist.name)
+
+        Glide.with(holder.itemView.context)
+            .load(playlist.imageUri)
+            .placeholder(R.drawable.gradient_card_pop)
+            .error(fallbackImage)
+            .centerCrop()
+            .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.ALL)
+            .into(holder.ivPlaylist)
         
         holder.itemView.setOnClickListener { onClick(playlist) }
     }

@@ -11,6 +11,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 
@@ -26,7 +27,7 @@ class PlaylistEditActivity : AppCompatActivity() {
     private val selectImageLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == RESULT_OK) {
             selectedImageUri = result.data?.data
-            ivPlaylistThumb.setImageURI(selectedImageUri)
+            Glide.with(this).load(selectedImageUri).centerCrop().into(ivPlaylistThumb)
         }
     }
 
@@ -39,6 +40,9 @@ class PlaylistEditActivity : AppCompatActivity() {
         rvSongsForPlaylist = findViewById(R.id.rvSongsForPlaylist)
         val btnSave = findViewById<MaterialButton>(R.id.btnSavePlaylist)
         val cvPlaylistImage = findViewById<androidx.cardview.widget.CardView>(R.id.cvPlaylistImage)
+
+        // Set initial premium fallback
+        Glide.with(this).load(VisualUtils.getPremiumImageForSeed("new_playlist")).centerCrop().into(ivPlaylistThumb)
 
         rvSongsForPlaylist.layoutManager = LinearLayoutManager(this)
 
